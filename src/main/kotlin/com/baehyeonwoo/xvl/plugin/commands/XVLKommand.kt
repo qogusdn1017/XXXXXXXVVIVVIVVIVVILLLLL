@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package com.baehyeonwoo.sample.plugin
+package com.baehyeonwoo.xvl.plugin.commands
 
+import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import io.github.monun.kommand.kommand
-import net.kyori.adventure.text.Component.text
 import org.bukkit.plugin.Plugin
 
 /***
  * @author BaeHyeonWoo
  */
 
-object SampleKommand {
+object XVLKommand {
     private fun getInstance(): Plugin {
-        return SamplePluginMain.instance
+        return XVLPluginMain.instance
     }
     
-    fun sampleKommand() {
+    fun xvlKommand() {
         getInstance().kommand {
-            register("sample") {
+            register("xvl") {
                 requires { playerOrNull != null && isOp }
                 executes {
-                    sender.sendMessage(text("Hello World!"))
+
                 }
             }
         }

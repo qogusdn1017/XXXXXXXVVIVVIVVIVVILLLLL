@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package com.baehyeonwoo.sample.plugin
+package com.baehyeonwoo.xvl.plugin
 
+import com.baehyeonwoo.xvl.plugin.commands.XVLKommand
+import com.baehyeonwoo.xvl.plugin.config.XVLConfig
+import com.baehyeonwoo.xvl.plugin.events.XVLEvent
+import com.baehyeonwoo.xvl.plugin.tasks.XVLBiomeCheckTask
+import com.baehyeonwoo.xvl.plugin.tasks.XVLConfigReloadTask
+import com.baehyeonwoo.xvl.plugin.tasks.XVLFreezingTask
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
@@ -23,10 +29,10 @@ import java.io.File
  * @author BaeHyeonWoo
  */
 
-class SamplePluginMain : JavaPlugin() {
+class XVLPluginMain : JavaPlugin() {
 
     companion object {
-        lateinit var instance: SamplePluginMain
+        lateinit var instance: XVLPluginMain
             private set
     }
 
@@ -34,10 +40,12 @@ class SamplePluginMain : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
-        SampleConfig.load(configFile)
-        logger.info("Hello World!")
-        server.pluginManager.registerEvents(SampleEvent(), this)
-        server.scheduler.runTask(instance, SampleScheduler())
-        SampleKommand.sampleKommand()
+
+        XVLConfig.load(configFile)
+        server.pluginManager.registerEvents(XVLEvent(), this)
+        server.scheduler.runTaskTimer(this, XVLBiomeCheckTask(), 0L, 0L)
+        server.scheduler.runTaskTimer(this, XVLFreezingTask(), 0L, 0L)
+        server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 0L)
+        XVLKommand.xvlKommand()
     }
 }

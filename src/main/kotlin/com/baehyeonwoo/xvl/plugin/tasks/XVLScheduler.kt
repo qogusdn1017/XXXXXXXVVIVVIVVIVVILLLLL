@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package com.baehyeonwoo.sample.plugin
+package com.baehyeonwoo.xvl.plugin.tasks
 
+import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import org.bukkit.plugin.Plugin
 
 /***
  * @author BaeHyeonWoo
  */
 
-class SampleScheduler : Runnable {
+class XVLScheduler : Runnable {
     private fun getInstance(): Plugin {
-        return SamplePluginMain.instance
+        return XVLPluginMain.instance
     }
-    
+
+    private val server = getInstance().server
+
     override fun run() {
-        getInstance().logger.info("Hello World!")
+        server.onlinePlayers.forEach {
+
+        }
     }
 }
