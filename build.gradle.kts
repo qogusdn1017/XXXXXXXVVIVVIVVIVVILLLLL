@@ -1,7 +1,4 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.nio.file.StandardCopyOption
-import java.nio.file.Files
-import java.nio.file.Paths
 
 plugins {
     kotlin("jvm") version "1.6.0"

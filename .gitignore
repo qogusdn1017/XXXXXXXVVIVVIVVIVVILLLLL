@@ -9,4 +9,4 @@ build
 !gradle-wrapper.jar
 !gradle-wrapper.properties
 # Server Files
-.server
+.server/

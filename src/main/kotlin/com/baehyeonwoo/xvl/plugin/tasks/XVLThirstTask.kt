@@ -17,28 +17,32 @@
 package com.baehyeonwoo.xvl.plugin.tasks
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.thirstValue
 import org.bukkit.plugin.Plugin
-import java.io.File
 
-/***
- * @author baeHyeonWoo
- */
+class XVLThirstTask : Runnable {
 
-class XVLConfigReloadTask : Runnable {
     private fun getInstance(): Plugin {
         return XVLPluginMain.instance
     }
 
-    private val configFile = File(getInstance().dataFolder, "config.yml")
-
-    private var configFileLastModified = configFile.lastModified()
+    private val server = getInstance().server
 
     override fun run() {
-        if (configFileLastModified != configFile.lastModified()) {
-            getInstance().reloadConfig()
-            getInstance().saveConfig()
-
-            configFileLastModified = configFile.lastModified()
+        for (onlinePlayers in server.onlinePlayers) {
+            if (XVLGameStatus.warming[onlinePlayers.uniqueId] == true) {
+                if (XVLGameStatus.isWarmBiome[onlinePlayers.uniqueId] == true) {
+                    ++onlinePlayers.thirstValue
+                    ++onlinePlayers.thirstValue
+                } else if (XVLGameStatus.isNetherBiome[onlinePlayers.uniqueId] == true) {
+                    ++onlinePlayers.thirstValue
+                    ++onlinePlayers.thirstValue
+                    ++onlinePlayers.thirstValue
+                }
+            } else {
+                ++onlinePlayers.thirstValue
+            }
         }
     }
 }

@@ -19,9 +19,11 @@ package com.baehyeonwoo.xvl.plugin
 import com.baehyeonwoo.xvl.plugin.commands.XVLKommand
 import com.baehyeonwoo.xvl.plugin.config.XVLConfig
 import com.baehyeonwoo.xvl.plugin.events.XVLEvent
-import com.baehyeonwoo.xvl.plugin.tasks.XVLBiomeCheckTask
-import com.baehyeonwoo.xvl.plugin.tasks.XVLConfigReloadTask
-import com.baehyeonwoo.xvl.plugin.tasks.XVLFreezingTask
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.setupScoreboards
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.setupWorlds
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.thirstValue
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.warmflag
+import com.baehyeonwoo.xvl.plugin.tasks.*
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
@@ -42,10 +44,32 @@ class XVLPluginMain : JavaPlugin() {
         instance = this
 
         XVLConfig.load(configFile)
-        server.pluginManager.registerEvents(XVLEvent(), this)
-        server.scheduler.runTaskTimer(this, XVLBiomeCheckTask(), 0L, 0L)
-        server.scheduler.runTaskTimer(this, XVLFreezingTask(), 0L, 0L)
-        server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 0L)
         XVLKommand.xvlKommand()
+
+        if (this.config.getBoolean("game-running")) {
+            setupWorlds()
+            setupScoreboards()
+
+            server.pluginManager.registerEvents(XVLEvent(), this)
+            server.scheduler.runTaskTimer(this, XVLGameTask(), 0L, 0L)
+            server.scheduler.runTaskTimer(this, XVLClimateTask(), 0L, 0L)
+            server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 0L)
+            server.scheduler.runTaskTimer(this, XVLThirstTask(), 20L, 20L)
+            server.scheduler.runTaskTimer(this, XVLScoreboardTask(), 20L, 20L)
+
+            for (onlinePlayers in server.onlinePlayers) {
+                warmflag[onlinePlayers.uniqueId] = false
+                onlinePlayers.freezeTicks = config.getInt("${onlinePlayers.name}.freezeticks", onlinePlayers.freezeTicks)
+                onlinePlayers.thirstValue = config.getInt("${onlinePlayers.name}.thirstvalue", onlinePlayers.thirstValue)
+            }
+        }
+    }
+
+    override fun onDisable() {
+        for (onlinePlayers in server.onlinePlayers) {
+            config.set("${onlinePlayers.name}.freezeticks", onlinePlayers.freezeTicks)
+            config.set("${onlinePlayers.name}.thirstvalue", onlinePlayers.thirstValue)
+            saveConfig()
+        }
     }
 }
