@@ -17,8 +17,10 @@
 package com.baehyeonwoo.xvl.plugin.events
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.thirstValue
-import com.baehyeonwoo.xvl.plugin.tasks.XVLEndingTask
+import com.baehyeonwoo.xvl.plugin.enums.DecreaseReason
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent
 import io.github.monun.tap.effect.playFirework
 import net.kyori.adventure.text.Component.text
@@ -31,12 +33,9 @@ import org.bukkit.entity.Monster
 import org.bukkit.entity.Player
 import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
-import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
-import org.bukkit.event.player.PlayerAdvancementDoneEvent
-import org.bukkit.event.player.PlayerBedLeaveEvent
-import org.bukkit.event.player.PlayerItemConsumeEvent
+import org.bukkit.event.player.*
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -55,9 +54,46 @@ class XVLEvent : Listener {
         return XVLPluginMain.instance
     }
 
+    private fun decreaseThirst(player: Player, decreaseReason: DecreaseReason) {
+        if (player.thirstValue < 600) {
+            player.removePotionEffect(PotionEffectType.SLOW)
+        } else if (player.thirstValue < 3600) {
+            player.removePotionEffect(PotionEffectType.SLOW)
+            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
+        } else if (player.thirstValue < 7200) {
+            player.removePotionEffect(PotionEffectType.CONFUSION)
+            player.removePotionEffect(PotionEffectType.SLOW)
+            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
+        }
+
+        if (decreaseReason == DecreaseReason.POTION) {
+            if (player.thirstValue - 300 > 0) player.thirstValue = player.thirstValue - 300
+            else if (player.thirstValue - 300 <= 0) player.thirstValue = 0
+        }
+        if (decreaseReason == DecreaseReason.MILK) {
+            if (player.thirstValue - 150 > 0) player.thirstValue = player.thirstValue - 150
+            else if (player.thirstValue - 150 <= 0) player.thirstValue = 0
+        }
+    }
+
     private val server = getInstance().server
 
-    // 기존 LVX에서 너프; 데미지 1.5배로 이전 코드보다 절반 이상 감소
+    // No Damage Ticks to 0
+    @EventHandler
+    fun onPlayerJoin(e: PlayerJoinEvent) {
+        val p = e.player
+
+        e.joinMessage(null)
+        p.noDamageTicks = 0
+    }
+
+    @EventHandler
+    fun onPlayerQuit(e: PlayerQuitEvent) {
+        e.quitMessage(null)
+        manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
+    }
+
+    // Nerfed from original LVX; Returning damage is set to 1.5x, which is lower than original.
     @EventHandler
     fun onEntityDamageByEntityEvent(e: EntityDamageByEntityEvent) {
         val dmgr = e.damager
@@ -82,6 +118,7 @@ class XVLEvent : Listener {
         }
     }
 
+    // Bed Event
     @EventHandler
     fun onPlayerBedLeave(e: PlayerBedLeaveEvent) {
         val p = e.player
@@ -157,6 +194,7 @@ class XVLEvent : Listener {
         }
     }
 
+    // Milk Event, Decrease Thirst
     @EventHandler
     fun onPlayerItemConsume(e: PlayerItemConsumeEvent) {
         val p = e.player
@@ -181,24 +219,14 @@ class XVLEvent : Listener {
                     )
                 }
             }
+            decreaseThirst(p, DecreaseReason.MILK)
         }
         if (e.item.type == Material.POTION) {
-            if (p.thirstValue < 600) {
-                p.removePotionEffect(PotionEffectType.SLOW)
-            } else if (p.thirstValue < 3600) {
-                p.removePotionEffect(PotionEffectType.SLOW)
-                p.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
-            } else if (p.thirstValue < 7200) {
-                p.removePotionEffect(PotionEffectType.CONFUSION)
-                p.removePotionEffect(PotionEffectType.SLOW)
-                p.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
-            }
-            if (p.thirstValue - 300 > 0) p.thirstValue = p.thirstValue - 300
-            else if (p.thirstValue - 300 <= 0) p.thirstValue = 0
+            decreaseThirst(p, DecreaseReason.POTION)
         }
     }
 
-    // 엔딩 조건 체크
+    // Check ending conditions
     @EventHandler
     fun onPlayerAdvancementDone(e: PlayerAdvancementDoneEvent) {
         val firework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(org.bukkit.Color.AQUA).build()
@@ -216,14 +244,16 @@ class XVLEvent : Listener {
                     loc.world.playFirework(loc, firework)
                 }
                 server.scheduler.cancelTasks(getInstance())
-                server.scheduler.runTaskTimer(getInstance(), XVLEndingTask(), 20L, 20L)
-                HandlerList.unregisterAll(getInstance())
+                ending = true
             }
         }
     }
 
     @EventHandler
     fun onPaperServerListPing(e: PaperServerListPingEvent) {
+
+        // The most fucking motd ever seen in your life lmfao
+
         val motdString = ("X X X X X X X V V I V V I V V I V V I L L L L L .")
         val localDateTime = LocalDateTime.now()
         val dateFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -241,6 +271,8 @@ class XVLEvent : Listener {
         }
 
         val sentence = stringJoiner.toString()
+
+        // Project start date; it has been planned earlier, but I forgot to set up the Wakatime & in this date I actually started writing in-game managing codes.
 
         e.numPlayers = 20211122
         e.maxPlayers = localDateTime.format(dateFormat).toInt()

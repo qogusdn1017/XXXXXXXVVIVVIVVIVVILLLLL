@@ -17,19 +17,21 @@
 package com.baehyeonwoo.xvl.plugin.tasks
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.freezing
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.highestFreezingTickValue
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.highestFreezingTicks
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.isNetherBiome
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.isWarmBiome
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.thirstValue
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.warmflag
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameStatus.warming
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.freezing
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.highestFreezingTickValue
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.highestFreezingTicks
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.warmflag
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.ChatColor
+import org.bukkit.Material
 import org.bukkit.block.Biome
 import org.bukkit.plugin.Plugin
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
+import java.io.File
 
 /***
  * @author BaeHyeonWoo
@@ -39,8 +41,6 @@ class XVLGameTask : Runnable {
     private fun getInstance(): Plugin {
         return XVLPluginMain.instance
     }
-
-    private val server = getInstance().server
 
     private val coldBiome = arrayListOf(
         Biome.SNOWY_PLAINS,
@@ -84,51 +84,160 @@ class XVLGameTask : Runnable {
         Biome.CRIMSON_FOREST,
     )
 
+    private val warmBlocks = arrayListOf(
+        Material.FIRE,
+        Material.SOUL_FIRE,
+        Material.CAMPFIRE,
+        Material.SOUL_CAMPFIRE,
+        Material.LAVA,
+        Material.LAVA_CAULDRON,
+        Material.MAGMA_BLOCK,
+        Material.TORCH,
+        Material.SOUL_TORCH,
+        Material.WALL_TORCH,
+        Material.SOUL_WALL_TORCH
+    )
+
+    private val configFile = File(getInstance().dataFolder, "config.yml")
+
+    private var configFileLastModified = configFile.lastModified()
+
+    private val server = getInstance().server
+
     override fun run() {
         for (onlinePlayers in server.onlinePlayers) {
+
             val biome = onlinePlayers.location.block.biome
+            val location = onlinePlayers.location
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+
+            // Live Config Reloading
+
+            if (configFileLastModified != configFile.lastModified()) {
+                getInstance().reloadConfig()
+                getInstance().saveConfig()
+
+                configFileLastModified = configFile.lastModified()
+            }
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+
+            // In-Gmae Managing Functions
+
+            fun increaseFreezing(WinterRelated: Boolean) {
+                if (WinterRelated) {
+                    if (highestFreezingTicks[onlinePlayers.uniqueId] != 142) {
+                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 142) ++onlinePlayers.uniqueId.highestFreezingTickValue
+                    }
+                }
+                else  {
+                    if (highestFreezingTicks[onlinePlayers.uniqueId] != 82) {
+                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 82) {
+                            if (onlinePlayers.uniqueId.highestFreezingTickValue < 82) ++onlinePlayers.uniqueId.highestFreezingTickValue
+                            else if (onlinePlayers.uniqueId.highestFreezingTickValue > 82) --onlinePlayers.uniqueId.highestFreezingTickValue
+                        }
+                    }
+                }
+
+                highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
+            }
+
+            fun decreaseFreezing() {
+                if (highestFreezingTicks[onlinePlayers.uniqueId] != 0) {
+                    if (onlinePlayers.uniqueId.highestFreezingTickValue != 0) --onlinePlayers.uniqueId.highestFreezingTickValue
+                    highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
+                }
+                if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+            }
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+
+            // Biome Check
 
             when {
                 coldBiome.contains(biome) -> {
-                    if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES) {
-                        if (warmflag[onlinePlayers.uniqueId] == false) {
-                            if (highestFreezingTicks[onlinePlayers.uniqueId] != 142) {
-                                if (onlinePlayers.uniqueId.highestFreezingTickValue != 142) ++onlinePlayers.uniqueId.highestFreezingTickValue
-                                highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
-                                freezing[onlinePlayers.uniqueId] = true
-                            }
-                            else if (onlinePlayers.uniqueId.highestFreezingTickValue != 82) {
-                                if (onlinePlayers.uniqueId.highestFreezingTickValue < 82) ++onlinePlayers.uniqueId.highestFreezingTickValue
-                                else if (onlinePlayers.uniqueId.highestFreezingTickValue > 82) --onlinePlayers.uniqueId.highestFreezingTickValue
-
-                                highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
-                                freezing[onlinePlayers.uniqueId] = true
-                            }
+                    server.broadcast(text("COLD BIOME"))
+                    if (warmflag[onlinePlayers.uniqueId] == false) {
+                        if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES) {
+                            increaseFreezing(WinterRelated = true)
+                            manageFlags(FreezingFlag = true, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
+                        }
+                        else {
+                            increaseFreezing(WinterRelated = false)
                         }
                     }
                 }
                 warmBiome.contains(biome) -> {
-                    freezing[onlinePlayers.uniqueId] = false
-                    warming[onlinePlayers.uniqueId] = true
-                    isWarmBiome[onlinePlayers.uniqueId] = true
+                    server.sendMessage(text("WARM BIOME"))
+                    manageFlags(FreezingFlag = false, ThirstyFlag = true, WarmBiomeFlag = true, NetherBiomeFlag = false)
                 }
                 netherBiome.contains(biome) -> {
-                    freezing[onlinePlayers.uniqueId] = false
-                    warming[onlinePlayers.uniqueId] = true
-                    isNetherBiome[onlinePlayers.uniqueId] = true
+                    server.sendMessage(text("NETHER BIOME"))
+                    manageFlags(FreezingFlag = false, ThirstyFlag = true, WarmBiomeFlag = false, NetherBiomeFlag = true)
                 }
                 else -> {
-                    freezing[onlinePlayers.uniqueId] = false
-                    warming[onlinePlayers.uniqueId] = false
-                    isWarmBiome[onlinePlayers.uniqueId] = false
-                    isNetherBiome[onlinePlayers.uniqueId] = false
+                    server.sendMessage(text("OTHER BIOME"))
+                    manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
                 }
             }
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+
+            // Freezing
+
+            if (freezing[onlinePlayers.uniqueId] == true) {
+                for (x in location.blockX - 2..location.blockX + 2) {
+                    for (y in location.blockY - 2..location.blockY + 2) {
+                        for (z in location.blockZ - 2..location.blockZ + 2) {
+                            if (warmBlocks.contains((location.world.getBlockAt(x, y, z)).type)) {
+                                warmflag[onlinePlayers.uniqueId] = true
+                            }
+                        }
+                    }
+                }
+
+                if (warmflag[onlinePlayers.uniqueId] == true) {
+                    // warm
+                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+
+                    decreaseFreezing()
+
+                    server.scheduler.scheduleSyncDelayedTask(getInstance(), { warmflag[onlinePlayers.uniqueId] = false }, 20L)
+                    onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
+                } else {
+                    //cold
+                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+
+                    if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+                    onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
+                }
+                server.broadcast(text("FREEZING TICKS - ${onlinePlayers.name}: ${onlinePlayers.freezeTicks}"))
+            }
+            else decreaseFreezing()
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+
+            // Actionbar Stat
 
             onlinePlayers.sendActionBar(
                 text("플레이어: ${onlinePlayers.name} | ${ChatColor.RED}체력: ${onlinePlayers.health.toInt()}${ChatColor.RESET} | ${ChatColor.DARK_GRAY}허기: ${onlinePlayers.foodLevel}${ChatColor.RESET} | ${ChatColor.DARK_BLUE}추위: ${onlinePlayers.freezeTicks}${ChatColor.RESET} | ${ChatColor.AQUA}갈증 : ${onlinePlayers.thirstValue}")
                     .decorate(TextDecoration.BOLD)
             )
+
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
+            /* ====================================================================================================================================================================================================================== */
         }
     }
 }
