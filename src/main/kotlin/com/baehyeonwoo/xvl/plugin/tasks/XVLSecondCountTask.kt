@@ -105,12 +105,12 @@ class XVLSecondCountTask: Runnable {
             if (onlinePlayers.thirstValue >= 600) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
             } else if (onlinePlayers.thirstValue >= 2400) {
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 1, true, false))
-            } else if (onlinePlayers.thirstValue >= 3600) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
+            } else if (onlinePlayers.thirstValue >= 3600) {
+                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
             } else if (onlinePlayers.thirstValue >= 7200) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 1000000, 0, true, false))
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
+                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 6, true, false))
             }
 
             /* ====================================================================================================================================================================================================================== */

@@ -163,11 +163,6 @@ object XVLGameContentManager {
             onlinePlayers.foodLevel = 19
             onlinePlayers.foodLevel = 20
             warmflag[onlinePlayers.uniqueId] = false
-
-            if (getInstance().config.get("${onlinePlayers.name}.freezeticks") != null && getInstance().config.get("${onlinePlayers.name}.thirstvalue") != null) {
-                onlinePlayers.freezeTicks = getInstance().config.getInt("${onlinePlayers.name}.freezeticks")
-                onlinePlayers.thirstValue = getInstance().config.getInt("${onlinePlayers.name}.thirstvalue")
-            }
         }
     }
 

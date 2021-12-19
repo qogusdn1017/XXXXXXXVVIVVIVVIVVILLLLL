@@ -58,9 +58,6 @@ class XVLGameTask : Runnable {
         Biome.COLD_OCEAN,
         Biome.DEEP_COLD_OCEAN,
         Biome.DRIPSTONE_CAVES,
-
-        // 영혼 모래 계곡과 뒤틀린 숲은 분위기상 춥다고 가정하여 코드를 작성하였습니다. 착오가 없으시길 바랍니다.
-
         Biome.SOUL_SAND_VALLEY,
         Biome.WARPED_FOREST
     )
@@ -117,6 +114,7 @@ class XVLGameTask : Runnable {
             // Live Config Reloading
 
             if (configFileLastModified != configFile.lastModified()) {
+                getInstance().logger.info("Config Reloaded.")
                 getInstance().reloadConfig()
                 getInstance().saveConfig()
 
@@ -135,11 +133,11 @@ class XVLGameTask : Runnable {
                         if (onlinePlayers.uniqueId.highestFreezingTickValue != 142) ++onlinePlayers.uniqueId.highestFreezingTickValue
                     }
                 }
-                else  {
+                else if (!WinterRelated)  {
                     if (highestFreezingTicks[onlinePlayers.uniqueId] != 82) {
-                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 82) {
+                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 82)  {
                             if (onlinePlayers.uniqueId.highestFreezingTickValue < 82) ++onlinePlayers.uniqueId.highestFreezingTickValue
-                            else if (onlinePlayers.uniqueId.highestFreezingTickValue > 82) --onlinePlayers.uniqueId.highestFreezingTickValue
+                            else --onlinePlayers.uniqueId.highestFreezingTickValue
                         }
                     }
                 }
@@ -150,9 +148,10 @@ class XVLGameTask : Runnable {
             fun decreaseFreezing() {
                 if (highestFreezingTicks[onlinePlayers.uniqueId] != 0) {
                     if (onlinePlayers.uniqueId.highestFreezingTickValue != 0) --onlinePlayers.uniqueId.highestFreezingTickValue
-                    highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
                 }
-                if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+
+                highestFreezingTicks[onlinePlayers.uniqueId] = onlinePlayers.uniqueId.highestFreezingTickValue
+                if (onlinePlayers.freezeTicks != 0) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
             }
 
             /* ====================================================================================================================================================================================================================== */
@@ -161,18 +160,22 @@ class XVLGameTask : Runnable {
 
             // Biome Check
 
+            server.broadcast(text("BIOME - ${onlinePlayers.name}: $biome"))
+
             when {
                 coldBiome.contains(biome) -> {
                     server.broadcast(text("COLD BIOME"))
                     if (warmflag[onlinePlayers.uniqueId] == false) {
                         if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES) {
+                            server.broadcast(text("WINTER RELATED"))
                             increaseFreezing(WinterRelated = true)
-                            manageFlags(FreezingFlag = true, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
                         }
                         else {
+                            server.broadcast(text("WINTER NOT RELATED"))
                             increaseFreezing(WinterRelated = false)
                         }
                     }
+                    manageFlags(FreezingFlag = true, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
                 }
                 warmBiome.contains(biome) -> {
                     server.sendMessage(text("WARM BIOME"))
@@ -198,31 +201,39 @@ class XVLGameTask : Runnable {
                 for (x in location.blockX - 2..location.blockX + 2) {
                     for (y in location.blockY - 2..location.blockY + 2) {
                         for (z in location.blockZ - 2..location.blockZ + 2) {
-                            if (warmBlocks.contains((location.world.getBlockAt(x, y, z)).type)) {
+                            if (warmBlocks.contains((location.world.getBlockAt(location.x.toInt(), y, z)).type) || warmBlocks.contains((location.world.getBlockAt(x, location.y.toInt(), z)).type) || warmBlocks.contains((location.world.getBlockAt(x, y, location.z.toInt())).type)) {
                                 warmflag[onlinePlayers.uniqueId] = true
+                                decreaseFreezing()
+                                onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
+                            }
+                            else {
+                                warmflag[onlinePlayers.uniqueId] = false
+
+                                if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+                                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
                             }
                         }
                     }
                 }
 
-                if (warmflag[onlinePlayers.uniqueId] == true) {
-                    // warm
-                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+                server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
 
-                    decreaseFreezing()
-
-                    server.scheduler.scheduleSyncDelayedTask(getInstance(), { warmflag[onlinePlayers.uniqueId] = false }, 20L)
-                    onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
-                } else {
-                    //cold
-                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
-
-                    if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
-                    onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
-                }
+//                if (warmflag[onlinePlayers.uniqueId] == true) {
+//                    // warm
+//                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+//                    warmflag[onlinePlayers.uniqueId] = false
+//
+//                    decreaseFreezing()
+//                    onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
+//                } else {
+//                    //cold
+//                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+//
+//                    if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+//                    onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
+//                }
                 server.broadcast(text("FREEZING TICKS - ${onlinePlayers.name}: ${onlinePlayers.freezeTicks}"))
             }
-            else decreaseFreezing()
 
             /* ====================================================================================================================================================================================================================== */
             /* ====================================================================================================================================================================================================================== */

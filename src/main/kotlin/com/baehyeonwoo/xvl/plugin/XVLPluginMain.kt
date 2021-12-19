@@ -50,7 +50,6 @@ class XVLPluginMain : JavaPlugin() {
     override fun onDisable() {
         for (onlinePlayers in server.onlinePlayers) {
             config.set("${onlinePlayers.name}.death", onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score)
-            config.set("${onlinePlayers.name}.freezeticks", onlinePlayers.freezeTicks)
             config.set("${onlinePlayers.name}.thirstvalue", onlinePlayers.thirstValue)
             saveConfig()
         }

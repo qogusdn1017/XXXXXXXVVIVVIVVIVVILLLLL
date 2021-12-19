@@ -83,13 +83,19 @@ class XVLEvent : Listener {
     fun onPlayerJoin(e: PlayerJoinEvent) {
         val p = e.player
 
+        p.thirstValue = getInstance().config.getInt("${p.name}.thirstvalue", p.thirstValue)
+
         e.joinMessage(null)
         p.noDamageTicks = 0
     }
 
     @EventHandler
     fun onPlayerQuit(e: PlayerQuitEvent) {
+        val p = e.player
         e.quitMessage(null)
+        getInstance().config.set("${p.name}.thirstvalue", p.thirstValue)
+        getInstance().saveConfig()
+
         manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
     }
 
@@ -203,20 +209,11 @@ class XVLEvent : Listener {
         if (type == Material.MILK_BUCKET) {
             when (nextInt(2)) {
                 0 -> {
-                    p.sendMessage(
-                        text(
-                            "괜찮은 우유를 드신 것 같습니다. (기본 우유 효과)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("괜찮은 우유를 드신 것 같습니다. (기본 우유 효과)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                 }
                 1 -> {
-                    p.sendMessage(
-                        text(
-                            "우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
+                    p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
                 }
             }
             decreaseThirst(p, DecreaseReason.MILK)
