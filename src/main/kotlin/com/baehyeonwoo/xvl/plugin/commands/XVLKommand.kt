@@ -22,7 +22,10 @@ import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.stopGame
 import io.github.monun.kommand.kommand
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title
+import org.bukkit.Material
 import org.bukkit.plugin.Plugin
+import java.time.Duration
 
 /***
  * @author BaeHyeonWoo
@@ -32,6 +35,20 @@ object XVLKommand {
     private fun getInstance(): Plugin {
         return XVLPluginMain.instance
     }
+
+    private val warmBlocks = arrayListOf(
+        Material.FIRE,
+        Material.SOUL_FIRE,
+        Material.CAMPFIRE,
+        Material.SOUL_CAMPFIRE,
+        Material.LAVA,
+        Material.LAVA_CAULDRON,
+        Material.MAGMA_BLOCK,
+        Material.TORCH,
+        Material.SOUL_TORCH,
+        Material.WALL_TORCH,
+        Material.SOUL_WALL_TORCH
+    )
     
     fun xvlKommand() {
         getInstance().kommand { 
@@ -60,6 +77,29 @@ object XVLKommand {
                         }
                         else {
                             sender.sendMessage(text("The game has already stopped!", NamedTextColor.RED))
+                        }
+                    }
+                }
+                then("test") {
+                    executes {
+                        for (x in -3..3) {
+                            for (y in -3..3) {
+                                for (z in -3..3) {
+                                    for (onlinePlayers in getInstance().server.onlinePlayers) {
+                                        val location = onlinePlayers.location.add(x.toDouble(), y.toDouble(), z.toDouble())
+                                        val boolArray = ArrayList<Boolean>()
+                                        val blockType = location.block.type
+
+                                        sender.sendMessage(text(blockType.toString()))
+                                        sender.sendMessage(text("x: ${location.x}, y: ${location.y}, z: ${location.z}"))
+
+                                        boolArray.addAll(listOf(blockType in warmBlocks))
+
+                                        getInstance().server.showTitle(Title.title(text(" "), text("$boolArray"), Title.Times.of(Duration.ofSeconds(0L), Duration.ofSeconds(5L), Duration.ofSeconds(0L))                                         ))
+                                        boolArray.clear()
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -28,12 +28,17 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title.Times.of
 import net.kyori.adventure.title.Title.title
+import org.bukkit.FireworkEffect
 import org.bukkit.Sound
+import org.bukkit.entity.Firework
+import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.DisplaySlot
 import java.time.Duration.ofSeconds
+import kotlin.random.Random.Default.nextFloat
+
 
 /***
  * @author BaeHyeonWoo
@@ -56,6 +61,20 @@ class XVLSecondCountTask: Runnable {
                 it.showTitle(title(text(" "), subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
             }
             else if (title == null && subtitle == null) return
+        }
+    }
+
+    private val fwEffect = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(org.bukkit.Color.AQUA).build()
+
+    private fun fireworks(it: Player) {
+        it.world.spawn(it.location, Firework::class.java).apply {
+            it.location.yaw = nextFloat() * 360.0F
+            it.location.pitch = -45F + nextFloat() * -45.0F
+            fireworkMeta = fireworkMeta.apply {
+                addEffects(fwEffect)
+                power = 10
+            }
+            velocity = it.location.direction.multiply(1.5)
         }
     }
 
@@ -173,8 +192,11 @@ class XVLSecondCountTask: Runnable {
                         }
                         else {
                             server.onlinePlayers.forEach {
+                                fireworks(it)
+
                                 it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
-                                titleFunction(text("게임을 종료합니다!", NamedTextColor.GREEN), text(" "))
+                                it.sendMessage(text("Game Stopped.", NamedTextColor.GREEN))
+                                titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
 
                                 stopGame()
                             }
@@ -188,6 +210,7 @@ class XVLSecondCountTask: Runnable {
                     10 -> {
                         if (getInstance().config.getBoolean("ending-message")) {
                             server.onlinePlayers.forEach {
+                                fireworks(it)
                                 it.playSound(it.location, Sound.ENTITY_PLAYER_LEVELUP, 1000F, 1F)
                                 titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
                             }

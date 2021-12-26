@@ -25,6 +25,7 @@ import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.warmflag
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.block.Biome
@@ -32,6 +33,7 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.io.File
+import java.time.Duration
 
 /***
  * @author BaeHyeonWoo
@@ -132,10 +134,9 @@ class XVLGameTask : Runnable {
                     if (highestFreezingTicks[onlinePlayers.uniqueId] != 142) {
                         if (onlinePlayers.uniqueId.highestFreezingTickValue != 142) ++onlinePlayers.uniqueId.highestFreezingTickValue
                     }
-                }
-                else if (!WinterRelated)  {
+                } else if (!WinterRelated) {
                     if (highestFreezingTicks[onlinePlayers.uniqueId] != 82) {
-                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 82)  {
+                        if (onlinePlayers.uniqueId.highestFreezingTickValue != 82) {
                             if (onlinePlayers.uniqueId.highestFreezingTickValue < 82) ++onlinePlayers.uniqueId.highestFreezingTickValue
                             else --onlinePlayers.uniqueId.highestFreezingTickValue
                         }
@@ -160,33 +161,46 @@ class XVLGameTask : Runnable {
 
             // Biome Check
 
-            server.broadcast(text("BIOME - ${onlinePlayers.name}: $biome"))
+            if (getInstance().config.getBoolean("debug")) {
+                server.broadcast(text("BIOME - ${onlinePlayers.name}: $biome"))
+            }
 
             when {
                 coldBiome.contains(biome) -> {
-                    server.broadcast(text("COLD BIOME"))
+                    if (getInstance().config.getBoolean("debug")) {
+                        server.broadcast(text("COLD BIOME"))
+                    }
                     if (warmflag[onlinePlayers.uniqueId] == false) {
                         if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES) {
-                            server.broadcast(text("WINTER RELATED"))
+                            if (getInstance().config.getBoolean("debug")) {
+                                server.broadcast(text("WINTER RELATED"))
+                            }
                             increaseFreezing(WinterRelated = true)
-                        }
-                        else {
-                            server.broadcast(text("WINTER NOT RELATED"))
+                        } else {
+                            if (getInstance().config.getBoolean("debug")) {
+                                server.broadcast(text("WINTER NOT RELATED"))
+                            }
                             increaseFreezing(WinterRelated = false)
                         }
                     }
                     manageFlags(FreezingFlag = true, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
                 }
                 warmBiome.contains(biome) -> {
-                    server.sendMessage(text("WARM BIOME"))
+                    if (getInstance().config.getBoolean("debug")) {
+                        server.sendMessage(text("WARM BIOME"))
+                    }
                     manageFlags(FreezingFlag = false, ThirstyFlag = true, WarmBiomeFlag = true, NetherBiomeFlag = false)
                 }
                 netherBiome.contains(biome) -> {
-                    server.sendMessage(text("NETHER BIOME"))
+                    if (getInstance().config.getBoolean("debug")) {
+                        server.sendMessage(text("NETHER BIOME"))
+                    }
                     manageFlags(FreezingFlag = false, ThirstyFlag = true, WarmBiomeFlag = false, NetherBiomeFlag = true)
                 }
                 else -> {
-                    server.sendMessage(text("OTHER BIOME"))
+                    if (getInstance().config.getBoolean("debug")) {
+                        server.sendMessage(text("OTHER BIOME"))
+                    }
                     manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
                 }
             }
@@ -199,41 +213,38 @@ class XVLGameTask : Runnable {
 
             if (freezing[onlinePlayers.uniqueId] == true) {
                 for (x in location.blockX - 2..location.blockX + 2) {
-                    for (y in location.blockY - 2..location.blockY + 2) {
-                        for (z in location.blockZ - 2..location.blockZ + 2) {
-                            if (warmBlocks.contains((location.world.getBlockAt(location.x.toInt(), y, z)).type) || warmBlocks.contains((location.world.getBlockAt(x, location.y.toInt(), z)).type) || warmBlocks.contains((location.world.getBlockAt(x, y, location.z.toInt())).type)) {
-                                warmflag[onlinePlayers.uniqueId] = true
-                                decreaseFreezing()
-                                onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
-                            }
-                            else {
-                                warmflag[onlinePlayers.uniqueId] = false
+                    for (z in location.blockZ - 2..location.blockZ + 2) {
+                        val loc1 = location.subtract(0.0, 0.01, 0.0)
+                        val loc2 = loc1.clone().subtract(0.0, 0.1, 0.0)
+                        val y = loc1.y.toInt().takeIf { !location.world.getBlockAt(x, loc1.y.toInt(), z).type.isAir } ?: loc2.y.toInt()
+                        val boolArray = ArrayList<Boolean>()
+                        val blockType = location.world.getBlockAt(x, y, z).type
 
-                                if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
-                                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
-                            }
+                        boolArray.add(warmBlocks.contains(blockType))
+
+                        server.showTitle(Title.title(text(" "), text("$boolArray"), Title.Times.of(Duration.ofSeconds(0L), Duration.ofSeconds(5L), Duration.ofSeconds(0L))))
+
+                        if (boolArray.toString().contains("true")) {
+                            warmflag[onlinePlayers.uniqueId] = true
+                            decreaseFreezing()
+                            onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
+                            boolArray.clear()
+                        }
+                        else {
+                            warmflag[onlinePlayers.uniqueId] = false
+                            if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
+                            onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
+                            boolArray.clear()
                         }
                     }
                 }
 
-                server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
-
-//                if (warmflag[onlinePlayers.uniqueId] == true) {
-//                    // warm
-//                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
-//                    warmflag[onlinePlayers.uniqueId] = false
-//
-//                    decreaseFreezing()
-//                    onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
-//                } else {
-//                    //cold
-//                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
-//
-//                    if (onlinePlayers.freezeTicks != highestFreezingTicks[onlinePlayers.uniqueId]) onlinePlayers.freezeTicks = requireNotNull(highestFreezingTicks[onlinePlayers.uniqueId])
-//                    onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
-//                }
-                server.broadcast(text("FREEZING TICKS - ${onlinePlayers.name}: ${onlinePlayers.freezeTicks}"))
+                if (getInstance().config.getBoolean("debug")) {
+                    server.broadcast(text("HIGHEST FREEZING TICKS - ${onlinePlayers.name}: ${highestFreezingTicks[onlinePlayers.uniqueId]}"))
+                    server.broadcast(text("FREEZING TICKS - ${onlinePlayers.name}: ${onlinePlayers.freezeTicks}"))
+                }
             }
+            else decreaseFreezing()
 
             /* ====================================================================================================================================================================================================================== */
             /* ====================================================================================================================================================================================================================== */

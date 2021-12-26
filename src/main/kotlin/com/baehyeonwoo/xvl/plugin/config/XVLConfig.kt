@@ -34,6 +34,9 @@ object XVLConfig {
     @Config
     var endingMessage = true
 
+    @Config
+    var debug = false
+
     fun load(configFile: File) {
         ConfigSupport.compute(this, configFile)
     }

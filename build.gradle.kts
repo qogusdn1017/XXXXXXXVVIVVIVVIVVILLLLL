@@ -13,7 +13,7 @@ repositories {
 dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly("io.papermc.paper:paper-api:1.18.1-R0.1-SNAPSHOT")
-    compileOnly("io.github.monun:tap-api:4.3.0")
+    compileOnly("io.github.monun:tap-api:4.3.1")
     compileOnly("io.github.monun:kommand-api:2.8.0")
 }
 

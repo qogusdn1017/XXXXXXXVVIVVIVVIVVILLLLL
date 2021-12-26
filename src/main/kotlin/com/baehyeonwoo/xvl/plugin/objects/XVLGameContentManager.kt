@@ -91,7 +91,14 @@ object XVLGameContentManager {
             world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, true)
             world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false)
             world.setGameRule(GameRule.LOG_ADMIN_COMMANDS, false)
-            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true)
+
+            if (!getInstance().config.getBoolean("debug")) {
+                world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true)
+            }
+            else {
+                world.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
+            }
+            
             world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, false)
             world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             world.setGameRule(GameRule.SPAWN_RADIUS, 0)

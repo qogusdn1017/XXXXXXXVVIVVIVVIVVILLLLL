@@ -109,10 +109,6 @@ class XVLEvent : Listener {
             if (dmgr.shooter is Player) {
                 (dmgr.shooter as Player).damage((dmg * 1.5))
             } else return
-
-            if (e.entity is Player) {
-                e.damage = e.damage * 1.5
-            }
         }
 
         if (dmgr is Player) {
@@ -132,66 +128,34 @@ class XVLEvent : Listener {
         if (p.world.time == 0L) {
             when (nextInt(7)) {
                 0 -> {
-                    p.sendMessage(
-                        text(
-                            "잠을 매우 잘 잤고 컨디션이 나름 괜찮습니다! 힘을 더 쓸 수 있을지도요...? (신속 II 3분, 힘 II 30초)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("잠을 매우 잘 잤고 컨디션이 나름 괜찮습니다! 힘을 더 쓸 수 있을지도요...? (신속 II 3분, 힘 II 30초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 20 * 180, 1, true, false))
                     p.addPotionEffect(PotionEffect(PotionEffectType.INCREASE_DAMAGE, 20 * 30, 1, true, false))
                 }
                 1 -> {
-                    p.sendMessage(
-                        text("머리가 매우 멍하고 컨디션이 좋지 않습니다... (구속 2분)", NamedTextColor.GRAY).decorate(
-                            TextDecoration.ITALIC
-                        )
-                    )
+                    p.sendMessage(text("머리가 매우 멍하고 컨디션이 좋지 않습니다... (구속 2분)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 20 * 120, 0, true, false))
                 }
                 2 -> {
-                    p.sendMessage(
-                        text(
-                            "악몽을 꾸었습니다. 다시는 생각해보기도 싫은 매우 끔찍한 악몽이었습니다. (구속 II 3분, 채굴피로 1분)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("악몽을 꾸었습니다. 다시는 생각해보기도 싫은 매우 끔찍한 악몽이었습니다. (구속 II 3분, 채굴피로 1분)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 20 * 180, 1, true, false))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SLOW_DIGGING, 20 * 60, 0, true, false))
                 }
                 3 -> {
-                    p.sendMessage(
-                        text("컨디션이 평범합니다. 평소처럼 활동 할 수 있을듯 합니다. (신속 1분 30초)", NamedTextColor.GRAY).decorate(
-                            TextDecoration.ITALIC
-                        )
-                    )
+                    p.sendMessage(text("컨디션이 평범합니다. 평소처럼 활동 할 수 있을듯 합니다. (신속 1분 30초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 20 * 90, 0, true, false))
                 }
                 4 -> {
-                    p.sendMessage(
-                        text(
-                            "수면마비(가위눌림)을 겪으셨습니다. 악몽과 비슷하게 썩 좋지많은 않았습니다. (구속 II 1분, 채굴피로 40초)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("수면마비(가위눌림)을 겪으셨습니다. 악몽과 비슷하게 썩 좋지많은 않았습니다. (구속 II 1분, 채굴피로 40초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 20 * 60, 1, true, false))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SLOW_DIGGING, 20 * 40, 0, true, false))
                 }
                 5 -> {
-                    p.sendMessage(
-                        text("자는 자세가 뭔가 잘못된걸까요...? 침대에서 굴러떨어지셨습니다.. (멀미 1분)", NamedTextColor.GRAY).decorate(
-                            TextDecoration.ITALIC
-                        )
-                    )
+                    p.sendMessage(text("자는 자세가 뭔가 잘못된걸까요...? 침대에서 굴러떨어지셨습니다.. (멀미 1분)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 60, 0, true, false))
                 }
                 6 -> {
-                    p.sendMessage(
-                        text(
-                            "간만에 매우 편하게 잠을 잤습니다! 고된 노동도 가볍게 느껴질거같은데요? (신속 II 3분, 힘 II 15초, 성급함 2분)",
-                            NamedTextColor.GRAY
-                        ).decorate(TextDecoration.ITALIC)
-                    )
+                    p.sendMessage(text("간만에 매우 편하게 잠을 잤습니다! 고된 노동도 가볍게 느껴질거같은데요? (신속 II 3분, 힘 II 15초, 성급함 2분)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 20 * 180, 1, true, false))
                     p.addPotionEffect(PotionEffect(PotionEffectType.INCREASE_DAMAGE, 20 * 15, 1, true, false))
                     p.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 20 * 120, 0, true, false))
@@ -207,13 +171,17 @@ class XVLEvent : Listener {
         val type = e.item.type
 
         if (type == Material.MILK_BUCKET) {
-            when (nextInt(2)) {
+            when (nextInt(3)) {
                 0 -> {
                     p.sendMessage(text("괜찮은 우유를 드신 것 같습니다. (기본 우유 효과)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                 }
                 1 -> {
                     p.sendMessage(text("우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
+                }
+                2 -> {
+                    p.sendMessage(text("오늘따라 우유를 먹을 컨디션은 아닌 것 같네요... (멀미 15초)"))
+                    p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 15, 0, true, false))
                 }
             }
             decreaseThirst(p, DecreaseReason.MILK)
