@@ -67,12 +67,10 @@ class XVLEvent : Listener {
         }
 
         if (decreaseReason == DecreaseReason.POTION) {
-            if (player.thirstValue - 300 > 0) player.thirstValue = player.thirstValue - 300
-            else if (player.thirstValue - 300 <= 0) player.thirstValue = 0
+            player.thirstValue = 0.coerceAtLeast(player.thirstValue - 300)
         }
         if (decreaseReason == DecreaseReason.MILK) {
-            if (player.thirstValue - 150 > 0) player.thirstValue = player.thirstValue - 150
-            else if (player.thirstValue - 150 <= 0) player.thirstValue = 0
+            player.thirstValue = 0.coerceAtLeast(player.thirstValue - 150)
         }
     }
 
