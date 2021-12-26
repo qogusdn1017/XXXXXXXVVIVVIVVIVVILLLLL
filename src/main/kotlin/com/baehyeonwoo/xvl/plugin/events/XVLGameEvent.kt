@@ -18,15 +18,17 @@ package com.baehyeonwoo.xvl.plugin.events
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import com.baehyeonwoo.xvl.plugin.enums.DecreaseReason
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.currentDate
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.gameTaskId
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.motd
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent
 import io.github.monun.tap.effect.playFirework
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.md_5.bungee.api.ChatColor
 import org.bukkit.FireworkEffect
 import org.bukkit.Material
 import org.bukkit.entity.Monster
@@ -39,17 +41,13 @@ import org.bukkit.event.player.*
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import java.awt.Color
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.random.Random.Default.nextInt
 
 /***
  * @author BaeHyeonWoo
  */
 
-class XVLEvent : Listener {
+class XVLGameEvent : Listener {
     private fun getInstance(): Plugin {
         return XVLPluginMain.instance
     }
@@ -81,7 +79,7 @@ class XVLEvent : Listener {
     fun onPlayerJoin(e: PlayerJoinEvent) {
         val p = e.player
 
-        p.thirstValue = getInstance().config.getInt("${p.name}.thirstvalue", p.thirstValue)
+        p.thirstValue = getInstance().config.getInt("${p.name}.thirstvalue")
 
         e.joinMessage(null)
         p.noDamageTicks = 0
@@ -175,11 +173,15 @@ class XVLEvent : Listener {
                 }
                 1 -> {
                     p.sendMessage(text("우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
-                    p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
+                    server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+                        p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
+                    }, 10L)
                 }
                 2 -> {
-                    p.sendMessage(text("오늘따라 우유를 먹을 컨디션은 아닌 것 같네요... (멀미 15초)"))
-                    p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 15, 0, true, false))
+                    p.sendMessage(text("오늘따라 우유를 먹을 컨디션은 아닌 것 같네요... (멀미 15초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
+                    server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+                        p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 15, 0, true, false))
+                    }, 10L)
                 }
             }
             decreaseThirst(p, DecreaseReason.MILK)
@@ -206,7 +208,7 @@ class XVLEvent : Listener {
 
                     loc.world.playFirework(loc, firework)
                 }
-                server.scheduler.cancelTasks(getInstance())
+                server.scheduler.cancelTask(gameTaskId)
                 ending = true
             }
         }
@@ -214,34 +216,11 @@ class XVLEvent : Listener {
 
     @EventHandler
     fun onPaperServerListPing(e: PaperServerListPingEvent) {
-
-        // The most fucking motd ever seen in your life lmfao
-
-        val motdString = ("X X X X X X X V V I V V I V V I V V I L L L L L .")
-        val localDateTime = LocalDateTime.now()
-        val dateFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
-
-        val words = motdString.split(" ").toMutableList()
-
-        for (i in words.indices) {
-            words[i] = "${ChatColor.of(Color(nextInt(0xFF0000)))}" + words[i]
-        }
-
-        val stringJoiner = StringJoiner("")
-
-        for (word in words) {
-            stringJoiner.add(word)
-        }
-
-        val sentence = stringJoiner.toString()
-
         // Project start date; it has been planned earlier, but I forgot to set up the Wakatime & in this date I actually started writing in-game managing codes.
 
         e.numPlayers = 20211122
-        e.maxPlayers = localDateTime.format(dateFormat).toInt()
-
+        e.maxPlayers = currentDate()
         e.playerSample.clear()
-
-        e.motd(text(sentence))
+        e.motd(text(motd()))
     }
 }

@@ -17,16 +17,28 @@
 package com.baehyeonwoo.xvl.plugin.objects
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
-import com.baehyeonwoo.xvl.plugin.events.XVLEvent
+import com.baehyeonwoo.xvl.plugin.events.XVLGameEvent
+import com.baehyeonwoo.xvl.plugin.events.XVLMotdEvent
 import com.baehyeonwoo.xvl.plugin.tasks.*
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title.Times.of
+import net.kyori.adventure.title.Title.title
+import net.md_5.bungee.api.ChatColor
 import org.bukkit.Difficulty
 import org.bukkit.GameRule
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.Plugin
+import java.awt.Color
+import java.time.Duration.ofSeconds
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.random.Random
 
 /***
  * @author BaeHyeonWoo
@@ -39,14 +51,16 @@ object XVLGameContentManager {
 
     private val server = getInstance().server
 
+    // TaskID
+    var gameTaskId = 0
+    private var openingTaskId = 0
+
     // Ending Flag
     var ending = false
-
 
     // Scoreboard Manager
     private val sm = server.scoreboardManager
     private val sc = sm.mainScoreboard
-
 
     // HashMaps
     private val thirst = HashMap<Player, Int>()
@@ -57,6 +71,7 @@ object XVLGameContentManager {
     val isWarmBiome = HashMap<UUID, Boolean>()
     val isNetherBiome = HashMap<UUID, Boolean>()
     val warmflag = HashMap<UUID, Boolean>()
+    val blockArray = HashMap<UUID, ArrayList<Material>>()
 
     var Player.thirstValue: Int
         get() {
@@ -75,6 +90,48 @@ object XVLGameContentManager {
         }
 
     // Game Managing Functions
+
+    fun currentDate(): Int {
+        val localDateTime = LocalDateTime.now()
+        val dateFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+        return localDateTime.format(dateFormat).toInt()
+    }
+
+    fun motd(): String {
+        // The most fucking motd ever seen in your life lmfao
+
+        val motdString = ("X X X X X X X V V I V V I V V I V V I L L L L L .")
+
+        val words = motdString.split(" ").toMutableList()
+
+        for (i in words.indices) {
+            words[i] = "${ChatColor.of(Color(Random.nextInt(0xFF0000)))}" + words[i]
+        }
+
+        val stringJoiner = StringJoiner("")
+
+        for (word in words) {
+            stringJoiner.add(word)
+        }
+
+        return stringJoiner.toString()
+    }
+
+    fun titleFunction(title: Component? = null, subtitle: Component? = null) {
+        server.onlinePlayers.forEach {
+            if (title != null && subtitle != null) {
+                it.showTitle(title(title, subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+            }
+            else if (title != null && subtitle == null) {
+                it.showTitle(title(title, text(" "), of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+            }
+            else if (title == null && subtitle != null) {
+                it.showTitle(title(text(" "), subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+            }
+            else if (title == null && subtitle == null) return
+        }
+    }
 
     fun manageFlags(FreezingFlag: Boolean, ThirstyFlag: Boolean, WarmBiomeFlag: Boolean, NetherBiomeFlag: Boolean) {
         for (onlinePlayers in server.onlinePlayers) {
@@ -117,7 +174,7 @@ object XVLGameContentManager {
         if (health == null) sc.registerNewObjective("Health", "health", text("체력", NamedTextColor.RED))
 
         val foodLevel = sc.getObjective("FoodLevel")
-        if (foodLevel == null) sc.registerNewObjective("FoodLevel", "food", text("허기", NamedTextColor.DARK_GRAY))
+        if (foodLevel == null) sc.registerNewObjective("FoodLevel", "food", text("허기", NamedTextColor.GOLD))
 
         val freeze = sc.getObjective("Freeze")
         if (freeze == null) sc.registerNewObjective("Freeze", "dummy", text("추위", NamedTextColor.DARK_BLUE))
@@ -132,7 +189,7 @@ object XVLGameContentManager {
         if (health1 == null) sc.registerNewObjective("Health1", "health", text("체력", NamedTextColor.RED))
 
         val foodLevel1 = sc.getObjective("FoodLevel1")
-        if (foodLevel1 == null) sc.registerNewObjective("FoodLevel1", "food", text("허기", NamedTextColor.DARK_GRAY))
+        if (foodLevel1 == null) sc.registerNewObjective("FoodLevel1", "food", text("허기", NamedTextColor.GOLD))
 
         val freeze1 = sc.getObjective("Freeze1")
         if (freeze1 == null) sc.registerNewObjective("Freeze1", "dummy", text("추위", NamedTextColor.DARK_BLUE))
@@ -153,7 +210,14 @@ object XVLGameContentManager {
     }
 
     fun startGame() {
+        HandlerList.unregisterAll(getInstance())
+
+        val gameTask = server.scheduler.runTaskTimer(getInstance(), XVLGameTask(), 0L, 0L)
         if (!getInstance().config.getBoolean("game-running")) {
+            if (getInstance().config.getBoolean("system-message")) {
+                val openingTask = server.scheduler.runTaskTimer(getInstance(), XVLOpeningTask(), 2L, 2L)
+                openingTaskId = openingTask.taskId
+            }
             getInstance().config.set("game-running", true)
             getInstance().saveConfig()
         }
@@ -161,19 +225,29 @@ object XVLGameContentManager {
         setupGameRules()
         setupScoreboards()
 
-        server.pluginManager.registerEvents(XVLEvent(), getInstance())
-        server.scheduler.runTaskTimer(getInstance(), XVLGameTask(), 0L, 0L)
         server.scheduler.runTaskTimer(getInstance(), XVLSecondCountTask(), 20L, 20L)
+        gameTaskId = gameTask.taskId
+
+        server.pluginManager.registerEvents(XVLGameEvent(), getInstance())
 
         for (onlinePlayers in server.onlinePlayers) {
-            onlinePlayers.damage(0.0001)
+            onlinePlayers.health = 20.0
+            onlinePlayers.foodLevel = 20
+
+            onlinePlayers.damage(1.0)
+
             onlinePlayers.foodLevel = 19
             onlinePlayers.foodLevel = 20
             warmflag[onlinePlayers.uniqueId] = false
         }
+
+        server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+            server.scheduler.cancelTask(openingTaskId)
+        }, 300L)
     }
 
     fun stopGame() {
+        ending = false
         restoreGameRules()
 
         getInstance().config.set("game-running", false)
@@ -181,6 +255,8 @@ object XVLGameContentManager {
         
         HandlerList.unregisterAll(getInstance())
         server.scheduler.cancelTasks(getInstance())
+        server.pluginManager.registerEvents(XVLMotdEvent(), getInstance())
+        server.scheduler.runTaskTimer(getInstance(), XVLConfigReloadTask(), 0L, 0L)
 
         manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
 

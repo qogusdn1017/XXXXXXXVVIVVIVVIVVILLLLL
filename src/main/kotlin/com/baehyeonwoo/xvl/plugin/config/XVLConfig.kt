@@ -32,7 +32,7 @@ object XVLConfig {
     var gameRunning = false
 
     @Config
-    var endingMessage = true
+    var systemMessage = true
 
     @Config
     var debug = false

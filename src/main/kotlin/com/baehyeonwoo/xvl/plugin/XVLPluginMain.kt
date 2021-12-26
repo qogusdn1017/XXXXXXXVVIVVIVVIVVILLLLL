@@ -18,8 +18,10 @@ package com.baehyeonwoo.xvl.plugin
 
 import com.baehyeonwoo.xvl.plugin.commands.XVLKommand.xvlKommand
 import com.baehyeonwoo.xvl.plugin.config.XVLConfig.load
+import com.baehyeonwoo.xvl.plugin.events.XVLMotdEvent
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.startGame
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
+import com.baehyeonwoo.xvl.plugin.tasks.XVLConfigReloadTask
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
@@ -38,6 +40,8 @@ class XVLPluginMain : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
+        server.pluginManager.registerEvents(XVLMotdEvent(), this)
+        server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 0L)
 
         load(configFile)
         xvlKommand()

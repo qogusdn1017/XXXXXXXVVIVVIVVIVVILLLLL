@@ -23,11 +23,9 @@ import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.isWarmBiome
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.stopGame
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirsty
-import net.kyori.adventure.text.Component
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.titleFunction
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.title.Title.Times.of
-import net.kyori.adventure.title.Title.title
 import org.bukkit.FireworkEffect
 import org.bukkit.Sound
 import org.bukkit.entity.Firework
@@ -36,9 +34,7 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.DisplaySlot
-import java.time.Duration.ofSeconds
 import kotlin.random.Random.Default.nextFloat
-
 
 /***
  * @author BaeHyeonWoo
@@ -49,21 +45,6 @@ class XVLSecondCountTask: Runnable {
         return XVLPluginMain.instance
     }
 
-    private fun titleFunction(title: Component? = null, subtitle: Component? = null) {
-        server.onlinePlayers.forEach {
-            if (title != null && subtitle != null) {
-                it.showTitle(title(title, subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
-            }
-            else if (title != null && subtitle == null) {
-                it.showTitle(title(title, text(" "), of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
-            }
-            else if (title == null && subtitle != null) {
-                it.showTitle(title(text(" "), subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
-            }
-            else if (title == null && subtitle == null) return
-        }
-    }
-
     private val fwEffect = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(org.bukkit.Color.AQUA).build()
 
     private fun fireworks(it: Player) {
@@ -72,7 +53,7 @@ class XVLSecondCountTask: Runnable {
             it.location.pitch = -45F + nextFloat() * -45.0F
             fireworkMeta = fireworkMeta.apply {
                 addEffects(fwEffect)
-                power = 10
+                power = 30
             }
             velocity = it.location.direction.multiply(1.5)
         }
@@ -121,13 +102,13 @@ class XVLSecondCountTask: Runnable {
                 ++onlinePlayers.thirstValue
              }
 
-            if (onlinePlayers.thirstValue >= 600) {
+            if (onlinePlayers.thirstValue >= 500) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
-            } else if (onlinePlayers.thirstValue >= 2400) {
+            } else if (onlinePlayers.thirstValue >= 1000) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
-            } else if (onlinePlayers.thirstValue >= 3600) {
+            } else if (onlinePlayers.thirstValue >= 2000) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
-            } else if (onlinePlayers.thirstValue >= 7200) {
+            } else if (onlinePlayers.thirstValue >= 3000) {
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 1000000, 0, true, false))
                 onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 6, true, false))
             }
@@ -142,7 +123,7 @@ class XVLSecondCountTask: Runnable {
             onlinePlayers.scoreboard.getObjective("Thirst")?.getScore(onlinePlayers.name)?.score = onlinePlayers.thirstValue
             onlinePlayers.scoreboard.getObjective("Freeze1")?.getScore(onlinePlayers.name)?.score = onlinePlayers.freezeTicks
             onlinePlayers.scoreboard.getObjective("Thirst1")?.getScore(onlinePlayers.name)?.score = onlinePlayers.thirstValue
-            onlinePlayers.scoreboard.getObjective("Death1")?.getScore(onlinePlayers.name)?.score = 1
+            onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score = 0
             onlinePlayers.scoreboard.getObjective("Death1")?.getScore(onlinePlayers.name)?.score = 0
 
             when (statCount++) {
@@ -180,7 +161,7 @@ class XVLSecondCountTask: Runnable {
             if (ending) {
                 when (endingCount++) {
                     0 -> {
-                        if (getInstance().config.getBoolean("ending-message")) {
+                        if (getInstance().config.getBoolean("system-message")) {
                             server.onlinePlayers.forEach {
                                 it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
                                 it.addPotionEffect(PotionEffect(PotionEffectType.LEVITATION, 1000000, 0, true, false))
@@ -203,12 +184,12 @@ class XVLSecondCountTask: Runnable {
                         }
                     }
                     5 -> {
-                        if (getInstance().config.getBoolean("ending-message")) {
+                        if (getInstance().config.getBoolean("system-message")) {
                             titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text("A Rechallenge for komq.", NamedTextColor.GRAY))
                         }
                     }
                     10 -> {
-                        if (getInstance().config.getBoolean("ending-message")) {
+                        if (getInstance().config.getBoolean("system-message")) {
                             server.onlinePlayers.forEach {
                                 fireworks(it)
                                 it.playSound(it.location, Sound.ENTITY_PLAYER_LEVELUP, 1000F, 1F)
@@ -217,18 +198,18 @@ class XVLSecondCountTask: Runnable {
                         }
                     }
                     15 -> {
-                        if (getInstance().config.getBoolean("ending-message")) {
+                        if (getInstance().config.getBoolean("system-message")) {
                             titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text("THE END"))
                         }
                     }
                     20 -> {
-                        if (getInstance().config.getBoolean("ending-message")) {
+                        if (getInstance().config.getBoolean("system-message")) {
                             server.onlinePlayers.forEach {
                                 it.removePotionEffect(PotionEffectType.LEVITATION)
                                 it.removePotionEffect(PotionEffectType.SLOW)
                                 it.removePotionEffect(PotionEffectType.BLINDNESS)
 
-                                it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n\n"))
+                                it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n"))
                                 it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh\n"))
                                 it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다. :D\n"))
                                 it.sendMessage(text("aHR0cHM6Ly9iYWVoeWVvbndvby5jb20vbWVzc2FnZQ==\n"))
