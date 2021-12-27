@@ -210,7 +210,7 @@ class XVLSecondCountTask: Runnable {
                                 it.removePotionEffect(PotionEffectType.BLINDNESS)
 
                                 it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n"))
-                                it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh\n"))
+                                it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh, DytroInc, Underconnor, dolphin2410\n"))
                                 it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다. :D\n"))
                                 it.sendMessage(text("aHR0cHM6Ly9iYWVoeWVvbndvby5jb20vbWVzc2FnZQ==\n"))
                                 titleFunction(text(" "), text("다른 여정의 끝, 이젠 좀 쉬어야겠어.", NamedTextColor.GRAY))
