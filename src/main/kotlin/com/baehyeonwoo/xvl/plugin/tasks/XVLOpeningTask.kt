@@ -16,11 +16,13 @@
 
 package com.baehyeonwoo.xvl.plugin.tasks
 
-import com.baehyeonwoo.xvl.plugin.XVLPluginMain
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.titleFunction
 import net.kyori.adventure.text.Component.text
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Particle
 import org.bukkit.Sound
-import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -29,10 +31,6 @@ import org.bukkit.potion.PotionEffectType
  */
 
 class XVLOpeningTask : Runnable {
-    private fun getInstance(): Plugin {
-        return XVLPluginMain.instance
-    }
-
     private val server = getInstance().server
 
     private var count = 0
@@ -96,8 +94,10 @@ class XVLOpeningTask : Runnable {
                 openingPlaySound()
                 titleFunction(text(" "), text("Rechallenge."))
             }
-            14 -> {
+            15 -> {
+                titleFunction(text(" "), text("R e c h a l l e n g e .", NamedTextColor.BLACK).decorate(TextDecoration.ITALIC))
                 server.onlinePlayers.forEach {
+                    it.world.spawnParticle(Particle.ASH, it.location.add(0.0, 2.0, 0.0), 150, 0.5, 0.5, 1.5, 0.25, null, true)
                     it.removePotionEffect(PotionEffectType.BLINDNESS)
                     it.playSound(it.location, Sound.ENTITY_WITHER_SPAWN, 0.5F, 1F)
                 }

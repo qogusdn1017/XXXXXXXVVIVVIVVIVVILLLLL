@@ -32,6 +32,7 @@ import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.Plugin
+import org.bukkit.potion.PotionEffectType
 import java.awt.Color
 import java.time.Duration.ofSeconds
 import java.time.LocalDateTime
@@ -45,7 +46,7 @@ import kotlin.random.Random
  */
 
 object XVLGameContentManager {
-    private fun getInstance(): Plugin {
+    fun getInstance(): Plugin {
         return XVLPluginMain.instance
     }
 
@@ -53,6 +54,7 @@ object XVLGameContentManager {
 
     // TaskID
     var gameTaskId = 0
+    var respawnTaskId = 0
     private var openingTaskId = 0
 
     // Ending Flag
@@ -64,7 +66,6 @@ object XVLGameContentManager {
 
     // HashMaps
     private val thirst = HashMap<Player, Int>()
-
     val highestFreezingTicks = HashMap<UUID, Int>()
     val freezing = HashMap<UUID, Boolean>()
     val thirsty = HashMap<UUID, Boolean>()
@@ -72,6 +73,8 @@ object XVLGameContentManager {
     val isNetherBiome = HashMap<UUID, Boolean>()
     val warmflag = HashMap<UUID, Boolean>()
     val blockArray = HashMap<UUID, ArrayList<Material>>()
+    val injured = HashMap<UUID, Boolean>()
+    val respawnDelay = HashMap<UUID, Boolean>()
 
     var Player.thirstValue: Int
         get() {
@@ -156,9 +159,10 @@ object XVLGameContentManager {
                 world.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
             }
             
-            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, false)
+            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             world.setGameRule(GameRule.SPAWN_RADIUS, 0)
+            world.difficulty = Difficulty.NORMAL
             world.difficulty = Difficulty.HARD
         }
     }
@@ -181,21 +185,6 @@ object XVLGameContentManager {
 
         val thirst = sc.getObjective("Thirst")
         if (thirst == null) sc.registerNewObjective("Thirst", "dummy", text("갈증", NamedTextColor.AQUA))
-
-        val death1 = sc.getObjective("Death1")
-        if (death1 == null) sc.registerNewObjective("Death1", "deathCount", text("죽은 횟수", NamedTextColor.DARK_RED))
-
-        val health1 = sc.getObjective("Health1")
-        if (health1 == null) sc.registerNewObjective("Health1", "health", text("체력", NamedTextColor.RED))
-
-        val foodLevel1 = sc.getObjective("FoodLevel1")
-        if (foodLevel1 == null) sc.registerNewObjective("FoodLevel1", "food", text("허기", NamedTextColor.GOLD))
-
-        val freeze1 = sc.getObjective("Freeze1")
-        if (freeze1 == null) sc.registerNewObjective("Freeze1", "dummy", text("추위", NamedTextColor.DARK_BLUE))
-
-        val thirst1 = sc.getObjective("Thirst1")
-        if (thirst1 == null) sc.registerNewObjective("Thirst1", "dummy", text("갈증", NamedTextColor.AQUA))
     }
 
     private fun restoreGameRules() {
@@ -215,7 +204,7 @@ object XVLGameContentManager {
         val gameTask = server.scheduler.runTaskTimer(getInstance(), XVLGameTask(), 0L, 0L)
         if (!getInstance().config.getBoolean("game-running")) {
             if (getInstance().config.getBoolean("system-message")) {
-                val openingTask = server.scheduler.runTaskTimer(getInstance(), XVLOpeningTask(), 2L, 2L)
+                val openingTask = server.scheduler.runTaskTimer(getInstance(), XVLOpeningTask(), 0L, 0L)
                 openingTaskId = openingTask.taskId
             }
             getInstance().config.set("game-running", true)
@@ -249,9 +238,6 @@ object XVLGameContentManager {
     fun stopGame() {
         ending = false
         restoreGameRules()
-
-        getInstance().config.set("game-running", false)
-        getInstance().saveConfig()
         
         HandlerList.unregisterAll(getInstance())
         server.scheduler.cancelTasks(getInstance())
@@ -261,8 +247,15 @@ object XVLGameContentManager {
         manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
 
         for (onlinePlayers in server.onlinePlayers) {
+            if (onlinePlayers.hasPotionEffect(PotionEffectType.SLOW)) {
+                onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
+                injured[onlinePlayers.uniqueId] = false
+                respawnDelay[onlinePlayers.uniqueId] = false
+            }
             onlinePlayers.thirstValue = 0
 
+            getInstance().config.set("game-running", false)
+            getInstance().config.set("kill-dragon", false)
             getInstance().config.set("${onlinePlayers.name}.death", null)
             getInstance().config.set("${onlinePlayers.name}.freezeticks", null)
             getInstance().config.set("${onlinePlayers.name}.thirstvalue", null)

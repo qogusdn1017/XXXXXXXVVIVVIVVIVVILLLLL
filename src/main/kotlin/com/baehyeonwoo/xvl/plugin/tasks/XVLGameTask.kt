@@ -16,9 +16,9 @@
 
 package com.baehyeonwoo.xvl.plugin.tasks
 
-import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.blockArray
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.freezing
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.highestFreezingTickValue
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.highestFreezingTicks
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
@@ -29,7 +29,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.block.Biome
-import org.bukkit.plugin.Plugin
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -38,10 +38,6 @@ import org.bukkit.potion.PotionEffectType
  */
 
 class XVLGameTask : Runnable {
-    private fun getInstance(): Plugin {
-        return XVLPluginMain.instance
-    }
-
     private val coldBiome = arrayListOf(
         Biome.SNOWY_PLAINS,
         Biome.ICE_SPIKES,
@@ -100,6 +96,7 @@ class XVLGameTask : Runnable {
     override fun run() {
         for (onlinePlayers in server.onlinePlayers) {
             val biome = onlinePlayers.location.block.biome
+            val inventory = onlinePlayers.inventory
 
             /* ====================================================================================================================================================================================================================== */
             /* ====================================================================================================================================================================================================================== */
@@ -149,7 +146,7 @@ class XVLGameTask : Runnable {
                         server.broadcast(text("COLD BIOME"))
                     }
                     if (warmflag[onlinePlayers.uniqueId] == false) {
-                        if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES) {
+                        if (biome.toString().lowercase().contains("frozen") || biome.toString().lowercase().contains("snowy") || biome == Biome.ICE_SPIKES || biome == Biome.GROVE) {
                             if (getInstance().config.getBoolean("debug")) {
                                 server.broadcast(text("WINTER RELATED"))
                             }
@@ -198,7 +195,7 @@ class XVLGameTask : Runnable {
                         }
                     }
                 }
-                if (blockArray[onlinePlayers.uniqueId]?.any { warmBlocks.contains(it) } == true) {
+                if ((blockArray[onlinePlayers.uniqueId]?.any { warmBlocks.contains(it) } == true) || ((inventory.helmet == ItemStack(Material.LEATHER_HELMET)) && (inventory.chestplate == ItemStack(Material.LEATHER_CHESTPLATE) && (inventory.leggings == ItemStack(Material.LEATHER_LEGGINGS) && (inventory.boots == ItemStack(Material.LEATHER_BOOTS)))))) {
                     warmflag[onlinePlayers.uniqueId] = true
                     decreaseFreezing()
                     onlinePlayers.removePotionEffect(PotionEffectType.SLOW)

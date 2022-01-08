@@ -16,8 +16,8 @@
 
 package com.baehyeonwoo.xvl.plugin.tasks
 
-import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.isNetherBiome
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.isWarmBiome
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.stopGame
@@ -30,7 +30,6 @@ import org.bukkit.FireworkEffect
 import org.bukkit.Sound
 import org.bukkit.entity.Firework
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.DisplaySlot
@@ -41,10 +40,6 @@ import kotlin.random.Random.Default.nextFloat
  */
 
 class XVLSecondCountTask: Runnable {
-    private fun getInstance(): Plugin {
-        return XVLPluginMain.instance
-    }
-
     private val fwEffect = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(org.bukkit.Color.AQUA).build()
 
     private fun fireworks(it: Player) {
@@ -76,12 +71,6 @@ class XVLSecondCountTask: Runnable {
             val foodLevel = sc.getObjective("FoodLevel")
             val freeze = sc.getObjective("Freeze")
             val thirst = sc.getObjective("Thirst")
-
-            val death1 = sc.getObjective("Death1")
-            val health1 = sc.getObjective("Health1")
-            val foodLevel1 = sc.getObjective("FoodLevel1")
-            val freeze1 = sc.getObjective("Freeze1")
-            val thirst1 = sc.getObjective("Thirst1")
 
             /* ====================================================================================================================================================================================================================== */
             /* ====================================================================================================================================================================================================================== */
@@ -121,31 +110,23 @@ class XVLSecondCountTask: Runnable {
 
             onlinePlayers.scoreboard.getObjective("Freeze")?.getScore(onlinePlayers.name)?.score = onlinePlayers.freezeTicks
             onlinePlayers.scoreboard.getObjective("Thirst")?.getScore(onlinePlayers.name)?.score = onlinePlayers.thirstValue
-            onlinePlayers.scoreboard.getObjective("Freeze1")?.getScore(onlinePlayers.name)?.score = onlinePlayers.freezeTicks
-            onlinePlayers.scoreboard.getObjective("Thirst1")?.getScore(onlinePlayers.name)?.score = onlinePlayers.thirstValue
             onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score = 0
-            onlinePlayers.scoreboard.getObjective("Death1")?.getScore(onlinePlayers.name)?.score = 0
 
             when (statCount++) {
                 0 -> {
                     death?.displaySlot = DisplaySlot.BELOW_NAME
-                    death1?.displaySlot = DisplaySlot.SIDEBAR
                 }
                 5 -> {
                     health?.displaySlot = DisplaySlot.BELOW_NAME
-                    health1?.displaySlot = DisplaySlot.SIDEBAR
                 }
                 10 -> {
                     foodLevel?.displaySlot = DisplaySlot.BELOW_NAME
-                    foodLevel1?.displaySlot = DisplaySlot.SIDEBAR
                 }
                 20 -> {
                     freeze?.displaySlot = DisplaySlot.BELOW_NAME
-                    freeze1?.displaySlot = DisplaySlot.SIDEBAR
                 }
                 25 -> {
                     thirst?.displaySlot = DisplaySlot.BELOW_NAME
-                    thirst1?.displaySlot = DisplaySlot.SIDEBAR
                 }
                 30 -> {
                     statCount = 0
@@ -185,7 +166,7 @@ class XVLSecondCountTask: Runnable {
                     }
                     5 -> {
                         if (getInstance().config.getBoolean("system-message")) {
-                            titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text("A Rechallenge for komq.", NamedTextColor.GRAY))
+                            titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text("A Rechallenge for the broken world.", NamedTextColor.GRAY))
                         }
                     }
                     10 -> {
@@ -211,7 +192,7 @@ class XVLSecondCountTask: Runnable {
 
                                 it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n"))
                                 it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh, DytroInc, Underconnor, dolphin2410\n"))
-                                it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다. :D\n"))
+                                it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다.\n"))
                                 it.sendMessage(text("aHR0cHM6Ly9iYWVoeWVvbndvby5jb20vbWVzc2FnZQ==\n"))
                                 titleFunction(text(" "), text("다른 여정의 끝, 이젠 좀 쉬어야겠어.", NamedTextColor.GRAY))
                             }

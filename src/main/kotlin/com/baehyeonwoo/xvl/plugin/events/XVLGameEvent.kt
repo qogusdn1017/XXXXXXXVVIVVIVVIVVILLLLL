@@ -16,13 +16,16 @@
 
 package com.baehyeonwoo.xvl.plugin.events
 
-import com.baehyeonwoo.xvl.plugin.XVLPluginMain
 import com.baehyeonwoo.xvl.plugin.enums.DecreaseReason
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.currentDate
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.gameTaskId
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.injured
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.motd
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.respawnDelay
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.respawnTaskId
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent
 import io.github.monun.tap.effect.playFirework
@@ -31,14 +34,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.FireworkEffect
 import org.bukkit.Material
-import org.bukkit.entity.Monster
 import org.bukkit.entity.Player
-import org.bukkit.entity.Projectile
+import org.bukkit.entity.WitherSkeleton
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.*
-import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import kotlin.random.Random.Default.nextInt
@@ -48,10 +50,6 @@ import kotlin.random.Random.Default.nextInt
  */
 
 class XVLGameEvent : Listener {
-    private fun getInstance(): Plugin {
-        return XVLPluginMain.instance
-    }
-
     private fun decreaseThirst(player: Player, decreaseReason: DecreaseReason) {
         if (player.thirstValue < 600) {
             player.removePotionEffect(PotionEffectType.SLOW)
@@ -72,7 +70,67 @@ class XVLGameEvent : Listener {
         }
     }
 
+    private fun fallInjured(p: Player) {
+        p.sendMessage(text("떨어지시면서 심하게 다치셨습니다! 음.. 오늘은 운이 좋지 않군요.", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
+        p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 90, 0, true, false))
+        injured[p.uniqueId] = true
+
+        server.scheduler.scheduleSyncDelayedTask(getInstance(), { injured[p.uniqueId] = false }, 20 * 90L)
+    }
+
     private val server = getInstance().server
+
+    @EventHandler
+    fun onEntityDamage(e: EntityDamageEvent) {
+        val entity = e.entity
+
+        if (entity is Player) {
+            if (e.cause == EntityDamageEvent.DamageCause.FALL) {
+                if (!entity.isDead) {
+                    if (entity.fallDistance >= 23) {
+                        when (nextInt(10)) {
+                            0 -> {
+                                fallInjured(entity)
+                            }
+                            1 -> {
+                                fallInjured(entity)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    fun onPlayerRespawn(e: PlayerRespawnEvent) {
+        val p = e.player
+
+        if (respawnTaskId != 0) {
+            server.scheduler.cancelTask(respawnTaskId)
+        }
+        respawnDelay[p.uniqueId] = true
+        p.sendMessage(text("10초뒤에 움직이실 수 있습니다!", NamedTextColor.RED))
+    }
+
+    @EventHandler
+    fun onPlayerMove(e: PlayerMoveEvent) {
+        val p = e.player
+
+        if (injured[p.uniqueId] == true) {
+            e.isCancelled = true
+            p.sendMessage(text("부상당한 상태이므로 몸을 움직이실 수 없습니다!", NamedTextColor.RED).decorate(TextDecoration.ITALIC))
+        }
+
+        if (respawnDelay[p.uniqueId] == true) {
+            e.isCancelled = true
+            val respawnTask = server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+                respawnDelay[p.uniqueId] = false
+            }, 20 * 10L)
+
+            respawnTaskId = respawnTask
+        }
+    }
 
     // No Damage Ticks to 0
     @EventHandler
@@ -99,22 +157,28 @@ class XVLGameEvent : Listener {
     @EventHandler
     fun onEntityDamageByEntityEvent(e: EntityDamageByEntityEvent) {
         val dmgr = e.damager
-        val dmg = e.finalDamage
-
-        if (dmgr is Projectile) {
-            if (dmgr.shooter is Player) {
-                (dmgr.shooter as Player).damage((dmg * 1.5))
-            } else return
-        }
-
-        if (dmgr is Player) {
-            dmgr.damage(dmg * 1.5)
-        }
-
-        if (dmgr is Monster) {
+//
+//        if (dmgr is Projectile) {
+//            if (dmgr.shooter is Player) {
+//                (dmgr.shooter as Player).damage((dmg * 1.5))
+//            }
+//            else if (dmgr.shooter is Monster) {
+//                e.damage = e.damage * 1.5
+//            }
+//        }
+//
+//        if (dmgr is Player) {
+//            dmgr.damage(dmg * 1.5)
+//        }
+//
+//        if (dmgr is Monster) {
+//            e.damage = e.damage * 1.5
+//        }
+        if (dmgr is WitherSkeleton) {
             e.damage = e.damage * 1.5
         }
     }
+    // Suggestion accepted; no JagangDucheon.
 
     // Bed Event
     @EventHandler

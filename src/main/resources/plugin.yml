@@ -1,6 +1,6 @@
 name: $pluginName
 main: $pluginMain
-api-version: "1.17"
+api-version: "1.18"
 version: $version
 libraries:
   - io.github.monun:tap:4.3.0
