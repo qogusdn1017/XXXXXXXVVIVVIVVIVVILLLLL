@@ -29,7 +29,6 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.block.Biome
-import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -195,7 +194,7 @@ class XVLGameTask : Runnable {
                         }
                     }
                 }
-                if ((blockArray[onlinePlayers.uniqueId]?.any { warmBlocks.contains(it) } == true) || ((inventory.helmet == ItemStack(Material.LEATHER_HELMET)) && (inventory.chestplate == ItemStack(Material.LEATHER_CHESTPLATE) && (inventory.leggings == ItemStack(Material.LEATHER_LEGGINGS) && (inventory.boots == ItemStack(Material.LEATHER_BOOTS)))))) {
+                if ((blockArray[onlinePlayers.uniqueId]?.any { warmBlocks.contains(it) } == true) || (inventory.helmet?.type == Material.LEATHER_HELMET && inventory.chestplate?.type == Material.LEATHER_CHESTPLATE && inventory.leggings?.type == Material.LEATHER_LEGGINGS && inventory.boots?.type == Material.LEATHER_BOOTS)) {
                     warmflag[onlinePlayers.uniqueId] = true
                     decreaseFreezing()
                     onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
