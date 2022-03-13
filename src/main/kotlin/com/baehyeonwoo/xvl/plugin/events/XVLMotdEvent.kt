@@ -19,7 +19,6 @@ package com.baehyeonwoo.xvl.plugin.events
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.currentDate
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.motd
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent
-import net.kyori.adventure.text.Component.text
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 
@@ -35,6 +34,6 @@ class XVLMotdEvent : Listener {
         e.numPlayers = 20211122
         e.maxPlayers = currentDate()
         e.playerSample.clear()
-        e.motd(text(motd()))
+        e.motd(motd())
     }
 }

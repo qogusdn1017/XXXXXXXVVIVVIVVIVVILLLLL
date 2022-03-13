@@ -20,18 +20,20 @@ import com.baehyeonwoo.xvl.plugin.enums.DecreaseReason
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.currentDate
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.gameTaskId
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.injured
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.manageFlags
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.motd
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.plugin
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.respawnDelay
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.respawnTaskId
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.server
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent
 import io.github.monun.tap.effect.playFirework
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Color
 import org.bukkit.FireworkEffect
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -75,10 +77,8 @@ class XVLGameEvent : Listener {
         p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 90, 0, true, false))
         injured[p.uniqueId] = true
 
-        server.scheduler.scheduleSyncDelayedTask(getInstance(), { injured[p.uniqueId] = false }, 20 * 90L)
+        server.scheduler.runTaskLater(plugin, Runnable { injured[p.uniqueId] = false }, 20 * 90L)
     }
-
-    private val server = getInstance().server
 
     @EventHandler
     fun onEntityDamage(e: EntityDamageEvent) {
@@ -124,11 +124,11 @@ class XVLGameEvent : Listener {
 
         if (respawnDelay[p.uniqueId] == true) {
             e.isCancelled = true
-            val respawnTask = server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+            val respawnTask = server.scheduler.runTaskLater(plugin, Runnable {
                 respawnDelay[p.uniqueId] = false
             }, 20 * 10L)
 
-            respawnTaskId = respawnTask
+            respawnTaskId = respawnTask.taskId
         }
     }
 
@@ -137,7 +137,7 @@ class XVLGameEvent : Listener {
     fun onPlayerJoin(e: PlayerJoinEvent) {
         val p = e.player
 
-        p.thirstValue = getInstance().config.getInt("${p.name}.thirstvalue")
+        p.thirstValue = plugin.config.getInt("${p.name}.thirstvalue")
 
         e.joinMessage(null)
         p.noDamageTicks = 0
@@ -147,8 +147,8 @@ class XVLGameEvent : Listener {
     fun onPlayerQuit(e: PlayerQuitEvent) {
         val p = e.player
         e.quitMessage(null)
-        getInstance().config.set("${p.name}.thirstvalue", p.thirstValue)
-        getInstance().saveConfig()
+        plugin.config.set("${p.name}.thirstvalue", p.thirstValue)
+        plugin.saveConfig()
 
         manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
     }
@@ -237,13 +237,13 @@ class XVLGameEvent : Listener {
                 }
                 1 -> {
                     p.sendMessage(text("우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
-                    server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+                    server.scheduler.runTaskLater(plugin, Runnable {
                         p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
                     }, 10L)
                 }
                 2 -> {
                     p.sendMessage(text("오늘따라 우유를 먹을 컨디션은 아닌 것 같네요... (멀미 15초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
-                    server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+                    server.scheduler.runTaskLater(plugin, Runnable {
                         p.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 20 * 15, 0, true, false))
                     }, 10L)
                 }
@@ -258,15 +258,15 @@ class XVLGameEvent : Listener {
     // Check ending conditions
     @EventHandler
     fun onPlayerAdvancementDone(e: PlayerAdvancementDoneEvent) {
-        val firework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(org.bukkit.Color.AQUA).build()
+        val firework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.AQUA).build()
         val advc = e.advancement
 
         if (advc.key.toString() == "minecraft:end/kill_dragon") {
-            getInstance().config.set("kill-dragon", true)
-            getInstance().saveConfig()
+            plugin.config.set("kill-dragon", true)
+            plugin.saveConfig()
         }
-        if (advc.key.toString() == "minecraft:nether/create_full_beacon") {
-            if (getInstance().config.getBoolean("kill-dragon")) {
+        if (advc.key.toString() == "minecraft:nether/create_beacon") {
+            if (plugin.config.getBoolean("kill-dragon")) {
                 server.onlinePlayers.forEach {
                     val loc = it.location.add(0.0, 0.9, 0.0)
 
@@ -285,6 +285,6 @@ class XVLGameEvent : Listener {
         e.numPlayers = 20211122
         e.maxPlayers = currentDate()
         e.playerSample.clear()
-        e.motd(text(motd()))
+        e.motd(motd())
     }
 }

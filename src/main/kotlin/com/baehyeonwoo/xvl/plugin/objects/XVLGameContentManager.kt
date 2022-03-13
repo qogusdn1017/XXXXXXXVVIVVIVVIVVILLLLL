@@ -17,40 +17,40 @@
 package com.baehyeonwoo.xvl.plugin.objects
 
 import com.baehyeonwoo.xvl.plugin.XVLPluginMain
-import com.baehyeonwoo.xvl.plugin.events.XVLGameEvent
-import com.baehyeonwoo.xvl.plugin.events.XVLMotdEvent
-import com.baehyeonwoo.xvl.plugin.tasks.*
+import com.baehyeonwoo.xvl.plugin.tasks.XVLConfigReloadTask
+import com.baehyeonwoo.xvl.plugin.tasks.XVLGameTask
+import com.baehyeonwoo.xvl.plugin.tasks.XVLOpeningTask
+import com.baehyeonwoo.xvl.plugin.tasks.XVLSecondCountTask
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.title.Title.Times.of
+import net.kyori.adventure.title.Title.Times.times
 import net.kyori.adventure.title.Title.title
-import net.md_5.bungee.api.ChatColor
+import org.bukkit.ChatColor.getByChar
 import org.bukkit.Difficulty
 import org.bukkit.GameRule
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
-import org.bukkit.plugin.Plugin
+import org.bukkit.event.Listener
 import org.bukkit.potion.PotionEffectType
-import java.awt.Color
 import java.time.Duration.ofSeconds
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.random.Random
+import kotlin.random.Random.Default.nextInt
 
 /***
  * @author BaeHyeonWoo
  */
 
 object XVLGameContentManager {
-    fun getInstance(): Plugin {
-        return XVLPluginMain.instance
-    }
+    val plugin = XVLPluginMain.instance
 
-    private val server = getInstance().server
+    val server = plugin.server
+
+    lateinit var gameEvent: Listener
+    lateinit var motdEvent: Listener
 
     // TaskID
     var gameTaskId = 0
@@ -101,69 +101,73 @@ object XVLGameContentManager {
         return localDateTime.format(dateFormat).toInt()
     }
 
-    fun motd(): String {
+    fun motd(): Component {
         // The most fucking motd ever seen in your life lmfao
 
-        val motdString = ("X X X X X X X V V I V V I V V I V V I L L L L L .")
+        val motdString = "X X X X X X X V V I V V I V V I V V I L L L L L ."
 
-        val words = motdString.split(" ").toMutableList()
+        val mainMotdWords = motdString.split(" ").toMutableList()
 
-        for (i in words.indices) {
-            words[i] = "${ChatColor.of(Color(Random.nextInt(0xFF0000)))}" + words[i]
+        mainMotdWords.indices.forEach {
+            mainMotdWords[it] = "${getByChar(nextInt(0xFF0000).toString())}${mainMotdWords[it]}"
         }
 
-        val stringJoiner = StringJoiner("")
+        val mainMotdString = StringJoiner("")
 
-        for (word in words) {
-            stringJoiner.add(word)
+        mainMotdWords.forEach {
+            mainMotdString.add(it)
         }
 
-        return stringJoiner.toString()
+        return text("$mainMotdString").append(text("\n${getByChar(nextInt(0xFFFF00).toString())}by Depressed BaeHyeonWoo."))
     }
 
     fun titleFunction(title: Component? = null, subtitle: Component? = null) {
         server.onlinePlayers.forEach {
-            if (title != null && subtitle != null) {
-                it.showTitle(title(title, subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+            if (title != null) {
+                if (subtitle != null) {
+                    it.showTitle(title(title, subtitle, times(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+                }
+                else {
+                    it.showTitle(title(title, text(" "), times(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+                }
             }
-            else if (title != null && subtitle == null) {
-                it.showTitle(title(title, text(" "), of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+            else {
+                if (subtitle != null) {
+                    it.showTitle(title(text(" "), subtitle, times(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
+                }
+                else return
             }
-            else if (title == null && subtitle != null) {
-                it.showTitle(title(text(" "), subtitle, of(ofSeconds(0.5.toLong()), ofSeconds(8), ofSeconds(0.5.toLong()))))
-            }
-            else if (title == null && subtitle == null) return
         }
     }
 
     fun manageFlags(FreezingFlag: Boolean, ThirstyFlag: Boolean, WarmBiomeFlag: Boolean, NetherBiomeFlag: Boolean) {
-        for (onlinePlayers in server.onlinePlayers) {
-            freezing[onlinePlayers.uniqueId] = FreezingFlag
-            thirsty[onlinePlayers.uniqueId] = ThirstyFlag
-            isWarmBiome[onlinePlayers.uniqueId] = WarmBiomeFlag
-            isNetherBiome[onlinePlayers.uniqueId] = NetherBiomeFlag
+        server.onlinePlayers.forEach {
+            freezing[it.uniqueId] = FreezingFlag
+            thirsty[it.uniqueId] = ThirstyFlag
+            isWarmBiome[it.uniqueId] = WarmBiomeFlag
+            isNetherBiome[it.uniqueId] = NetherBiomeFlag
         }
     }
 
     private fun setupGameRules() {
-        for (world in server.worlds) {
-            world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, true)
-            world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, true)
-            world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false)
-            world.setGameRule(GameRule.LOG_ADMIN_COMMANDS, false)
+        server.worlds.forEach {
+            it.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, true)
+            it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, true)
+            it.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false)
+            it.setGameRule(GameRule.LOG_ADMIN_COMMANDS, false)
 
-            if (!getInstance().config.getBoolean("debug")) {
-                world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true)
+            if (!plugin.config.getBoolean("debug")) {
+                it.setGameRule(GameRule.REDUCED_DEBUG_INFO, true)
             }
             else {
-                world.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
+                it.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
             }
             
-            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
-            world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
-            world.setGameRule(GameRule.SPAWN_RADIUS, 0)
-            world.difficulty = Difficulty.NORMAL
-            world.difficulty = Difficulty.HARD
+            it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+            it.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
+            it.setGameRule(GameRule.SPAWN_RADIUS, 0)
+            it.difficulty = Difficulty.NORMAL
+            it.difficulty = Difficulty.HARD
         }
     }
 
@@ -188,49 +192,49 @@ object XVLGameContentManager {
     }
 
     private fun restoreGameRules() {
-        for (world in server.worlds) {
-            world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, true)
-            world.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true)
-            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
-            world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true)
-            world.setGameRule(GameRule.SPAWN_RADIUS, 10)
-            world.difficulty = Difficulty.NORMAL
+        server.worlds.forEach {
+            it.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, true)
+            it.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true)
+            it.setGameRule(GameRule.REDUCED_DEBUG_INFO, false)
+            it.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true)
+            it.setGameRule(GameRule.SPAWN_RADIUS, 10)
+            it.difficulty = Difficulty.NORMAL
         }
     }
 
     fun startGame() {
-        HandlerList.unregisterAll(getInstance())
+        HandlerList.unregisterAll(gameEvent)
 
-        val gameTask = server.scheduler.runTaskTimer(getInstance(), XVLGameTask(), 0L, 0L)
-        if (!getInstance().config.getBoolean("game-running")) {
-            if (getInstance().config.getBoolean("system-message")) {
-                val openingTask = server.scheduler.runTaskTimer(getInstance(), XVLOpeningTask(), 0L, 0L)
+        val gameTask = server.scheduler.runTaskTimer(plugin, XVLGameTask(), 0L, 0L)
+        if (!plugin.config.getBoolean("game-running")) {
+            if (plugin.config.getBoolean("system-message")) {
+                val openingTask = server.scheduler.runTaskTimer(plugin, XVLOpeningTask(), 0L, 0L)
                 openingTaskId = openingTask.taskId
             }
-            getInstance().config.set("game-running", true)
-            getInstance().saveConfig()
+            plugin.config.set("game-running", true)
+            plugin.saveConfig()
         }
 
         setupGameRules()
         setupScoreboards()
 
-        server.scheduler.runTaskTimer(getInstance(), XVLSecondCountTask(), 20L, 20L)
+        server.scheduler.runTaskTimer(plugin, XVLSecondCountTask(), 20L, 20L)
         gameTaskId = gameTask.taskId
 
-        server.pluginManager.registerEvents(XVLGameEvent(), getInstance())
+        server.pluginManager.registerEvents(gameEvent, plugin)
 
-        for (onlinePlayers in server.onlinePlayers) {
-            onlinePlayers.health = 20.0
-            onlinePlayers.foodLevel = 20
+        server.onlinePlayers.forEach {
+            it.health = 20.0
+            it.foodLevel = 20
 
-            onlinePlayers.damage(1.0)
+            it.damage(1.0)
 
-            onlinePlayers.foodLevel = 19
-            onlinePlayers.foodLevel = 20
-            warmflag[onlinePlayers.uniqueId] = false
+            it.foodLevel = 19
+            it.foodLevel = 20
+            warmflag[it.uniqueId] = false
         }
 
-        server.scheduler.scheduleSyncDelayedTask(getInstance(), {
+        server.scheduler.scheduleSyncDelayedTask(plugin, {
             server.scheduler.cancelTask(openingTaskId)
         }, 300L)
     }
@@ -239,29 +243,29 @@ object XVLGameContentManager {
         ending = false
         restoreGameRules()
         
-        HandlerList.unregisterAll(getInstance())
-        server.scheduler.cancelTasks(getInstance())
-        server.pluginManager.registerEvents(XVLMotdEvent(), getInstance())
-        server.scheduler.runTaskTimer(getInstance(), XVLConfigReloadTask(), 0L, 0L)
+        HandlerList.unregisterAll(gameEvent)
+        server.scheduler.cancelTasks(plugin)
+        server.scheduler.runTaskTimer(plugin, XVLConfigReloadTask(), 0L, 0L)
 
         manageFlags(FreezingFlag = false, ThirstyFlag = false, WarmBiomeFlag = false, NetherBiomeFlag = false)
 
-        for (onlinePlayers in server.onlinePlayers) {
-            if (onlinePlayers.hasPotionEffect(PotionEffectType.SLOW)) {
-                onlinePlayers.removePotionEffect(PotionEffectType.SLOW)
-                injured[onlinePlayers.uniqueId] = false
-                respawnDelay[onlinePlayers.uniqueId] = false
+        server.onlinePlayers.forEach {
+            if (it.hasPotionEffect(PotionEffectType.SLOW)) {
+                it.removePotionEffect(PotionEffectType.SLOW)
+                injured[it.uniqueId] = false
+                respawnDelay[it.uniqueId] = false
             }
-            onlinePlayers.thirstValue = 0
 
-            getInstance().config.set("game-running", false)
-            getInstance().config.set("kill-dragon", false)
-            getInstance().config.set("${onlinePlayers.name}.death", null)
-            getInstance().config.set("${onlinePlayers.name}.freezeticks", null)
-            getInstance().config.set("${onlinePlayers.name}.thirstvalue", null)
-            getInstance().saveConfig()
+            it.thirstValue = 0
 
-            sc.objectives.forEach { it.unregister() }
+            plugin.config.set("game-running", false)
+            plugin.config.set("kill-dragon", false)
+            plugin.config.set("${it.name}.death", null)
+            plugin.config.set("${it.name}.freezeticks", null)
+            plugin.config.set("${it.name}.thirstvalue", null)
+            plugin.saveConfig()
         }
+
+        sc.objectives.forEach { it.unregister() }
     }
 }

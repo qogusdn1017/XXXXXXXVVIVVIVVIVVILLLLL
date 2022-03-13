@@ -17,9 +17,10 @@
 package com.baehyeonwoo.xvl.plugin.tasks
 
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.ending
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.isNetherBiome
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.isWarmBiome
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.plugin
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.server
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.stopGame
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirsty
@@ -33,7 +34,6 @@ import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.DisplaySlot
-import kotlin.random.Random.Default.nextFloat
 
 /***
  * @author BaeHyeonWoo
@@ -44,25 +44,19 @@ class XVLSecondCountTask: Runnable {
 
     private fun fireworks(it: Player) {
         it.world.spawn(it.location, Firework::class.java).apply {
-            it.location.yaw = nextFloat() * 360.0F
-            it.location.pitch = -45F + nextFloat() * -45.0F
             fireworkMeta = fireworkMeta.apply {
                 addEffects(fwEffect)
                 power = 30
             }
-            velocity = it.location.direction.multiply(1.5)
         }
     }
-
-    private val server = getInstance().server
 
     private var statCount = 0
 
     private var endingCount = 0
 
     override fun run() {
-        for (onlinePlayers in server.onlinePlayers) {
-
+        server.onlinePlayers.forEach {
             val sm = server.scoreboardManager
             val sc = sm.mainScoreboard
 
@@ -78,28 +72,28 @@ class XVLSecondCountTask: Runnable {
 
             // Thirst
 
-            if (thirsty[onlinePlayers.uniqueId] == true) {
-                if (isWarmBiome[onlinePlayers.uniqueId] == true) {
-                    ++onlinePlayers.thirstValue
-                    ++onlinePlayers.thirstValue
-                } else if (isNetherBiome[onlinePlayers.uniqueId] == true) {
-                    ++onlinePlayers.thirstValue
-                    ++onlinePlayers.thirstValue
-                    ++onlinePlayers.thirstValue
+            if (thirsty[it.uniqueId] == true) {
+                if (isWarmBiome[it.uniqueId] == true) {
+                    ++it.thirstValue
+                    ++it.thirstValue
+                } else if (isNetherBiome[it.uniqueId] == true) {
+                    ++it.thirstValue
+                    ++it.thirstValue
+                    ++it.thirstValue
                 }
             } else {
-                ++onlinePlayers.thirstValue
+                ++it.thirstValue
              }
 
-            if (onlinePlayers.thirstValue >= 500) {
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
-            } else if (onlinePlayers.thirstValue >= 1000) {
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
-            } else if (onlinePlayers.thirstValue >= 2000) {
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
-            } else if (onlinePlayers.thirstValue >= 3000) {
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 1000000, 0, true, false))
-                onlinePlayers.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 6, true, false))
+            if (it.thirstValue >= 500) {
+                it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 0, true, false))
+            } else if (it.thirstValue >= 1000) {
+                it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 2, true, false))
+            } else if (it.thirstValue >= 2000) {
+                it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 4, true, false))
+            } else if (it.thirstValue >= 3000) {
+                it.addPotionEffect(PotionEffect(PotionEffectType.CONFUSION, 1000000, 0, true, false))
+                it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 6, true, false))
             }
 
             /* ====================================================================================================================================================================================================================== */
@@ -108,9 +102,9 @@ class XVLSecondCountTask: Runnable {
 
             // Stats
 
-            onlinePlayers.scoreboard.getObjective("Freeze")?.getScore(onlinePlayers.name)?.score = onlinePlayers.freezeTicks
-            onlinePlayers.scoreboard.getObjective("Thirst")?.getScore(onlinePlayers.name)?.score = onlinePlayers.thirstValue
-            onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score = 0
+            it.scoreboard.getObjective("Freeze")?.getScore(it.name)?.score = it.freezeTicks
+            it.scoreboard.getObjective("Thirst")?.getScore(it.name)?.score = it.thirstValue
+            it.scoreboard.getObjective("Death")?.getScore(it.name)?.score = 0
 
             when (statCount++) {
                 0 -> {
@@ -142,66 +136,58 @@ class XVLSecondCountTask: Runnable {
             if (ending) {
                 when (endingCount++) {
                     0 -> {
-                        if (getInstance().config.getBoolean("system-message")) {
-                            server.onlinePlayers.forEach {
-                                it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
-                                it.addPotionEffect(PotionEffect(PotionEffectType.LEVITATION, 1000000, 0, true, false))
-                                it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 1000000, 255, true, false))
-                                it.addPotionEffect(PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 1000000, 255, true, false))
-                                it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 255, true, false))
-                                titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text(" "))
-                            }
+                        if (plugin.config.getBoolean("system-message")) {
+                            it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
+                            it.addPotionEffect(PotionEffect(PotionEffectType.LEVITATION, 1000000, 0, true, false))
+                            it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 1000000, 255, true, false))
+                            it.addPotionEffect(PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 1000000, 255, true, false))
+                            it.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 1000000, 255, true, false))
+                            titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text(" "))
                         }
                         else {
-                            server.onlinePlayers.forEach {
-                                fireworks(it)
+                            fireworks(it)
 
-                                it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
-                                it.sendMessage(text("Game Stopped.", NamedTextColor.GREEN))
-                                titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
+                            it.playSound(it.location, Sound.ENTITY_WITHER_DEATH, 0.25F, 1.5F)
+                            it.sendMessage(text("Game Stopped.", NamedTextColor.GREEN))
+                            titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
 
-                                stopGame()
-                            }
+                            stopGame()
                         }
                     }
                     5 -> {
-                        if (getInstance().config.getBoolean("system-message")) {
+                        if (plugin.config.getBoolean("system-message")) {
                             titleFunction(text("XXXXXXXVVIVVIVVIVVILLLLL."), text("A Rechallenge for the broken world.", NamedTextColor.GRAY))
                         }
                     }
                     10 -> {
-                        if (getInstance().config.getBoolean("system-message")) {
-                            server.onlinePlayers.forEach {
-                                fireworks(it)
-                                it.playSound(it.location, Sound.ENTITY_PLAYER_LEVELUP, 1000F, 1F)
-                                titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
-                            }
+                        if (plugin.config.getBoolean("system-message")) {
+                            fireworks(it)
+                            it.playSound(it.location, Sound.ENTITY_PLAYER_LEVELUP, 1000F, 1F)
+                            titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text(" "))
                         }
                     }
                     15 -> {
-                        if (getInstance().config.getBoolean("system-message")) {
+                        if (plugin.config.getBoolean("system-message")) {
                             titleFunction(text("클리어를 축하드립니다!", NamedTextColor.GREEN), text("THE END"))
                         }
                     }
                     20 -> {
-                        if (getInstance().config.getBoolean("system-message")) {
-                            server.onlinePlayers.forEach {
-                                it.removePotionEffect(PotionEffectType.LEVITATION)
-                                it.removePotionEffect(PotionEffectType.SLOW)
-                                it.removePotionEffect(PotionEffectType.BLINDNESS)
+                        if (plugin.config.getBoolean("system-message")) {
+                            it.removePotionEffect(PotionEffectType.LEVITATION)
+                            it.removePotionEffect(PotionEffectType.SLOW)
+                            it.removePotionEffect(PotionEffectType.BLINDNESS)
 
-                                it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n"))
-                                it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh, DytroInc, Underconnor, dolphin2410\n"))
-                                it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다.\n"))
-                                it.sendMessage(text("aHR0cHM6Ly9iYWVoeWVvbndvby5jb20vbWVzc2FnZQ==\n"))
-                                titleFunction(text(" "), text("다른 여정의 끝, 이젠 좀 쉬어야겠어.", NamedTextColor.GRAY))
-                            }
+                            it.sendMessage(text("XXXXXXXVVIVVIVVIVVILLLLL.\n"))
+                            it.sendMessage(text("제작: BaeHyeonWoo\n\nSpecial Thanks: PyBsh, DytroInc, Underconnor, dolphin2410\n"))
+                            it.sendMessage(text("코마님의 구독자 15만명과 21년 12월 15일 생일을 축하드립니다.\n"))
+                            it.sendMessage(text("aHR0cHM6Ly9iYWVoeWVvbndvby5jb20vbWVzc2FnZQ==\n"))
+                            titleFunction(text(" "), text("다른 여정의 끝, 이젠 좀 쉬어야겠어.", NamedTextColor.GRAY))
                         }
 
-                        getInstance().config.set("${onlinePlayers.name}.death", onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score)
-                        getInstance().saveConfig()
+                        plugin.config.set("${it.name}.death", it.scoreboard.getObjective("Death")?.getScore(it.name)?.score)
+                        plugin.saveConfig()
 
-                        onlinePlayers.sendMessage(text("총 죽은 횟수: ${getInstance().config.getInt("${onlinePlayers.name}.death")}"))
+                        it.sendMessage(text("총 죽은 횟수: ${plugin.config.getInt("${it.name}.death")}"))
 
                         stopGame()
                     }

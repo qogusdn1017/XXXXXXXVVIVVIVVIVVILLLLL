@@ -16,7 +16,7 @@
 
 package com.baehyeonwoo.xvl.plugin.tasks
 
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.plugin
 import java.io.File
 
 /***
@@ -24,7 +24,7 @@ import java.io.File
  */
 
 class XVLConfigReloadTask: Runnable {
-    private val configFile = File(getInstance().dataFolder, "config.yml")
+    private val configFile = File(plugin.dataFolder, "config.yml")
 
     private var configFileLastModified = configFile.lastModified()
 
@@ -32,9 +32,9 @@ class XVLConfigReloadTask: Runnable {
         // Live Config Reloading
 
         if (configFileLastModified != configFile.lastModified()) {
-            getInstance().logger.info("Config Reloaded.")
-            getInstance().reloadConfig()
-            getInstance().saveConfig()
+            plugin.logger.info("Config Reloaded.")
+            plugin.reloadConfig()
+            plugin.saveConfig()
 
             configFileLastModified = configFile.lastModified()
         }

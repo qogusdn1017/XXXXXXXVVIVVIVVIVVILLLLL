@@ -16,7 +16,7 @@
 
 package com.baehyeonwoo.xvl.plugin.tasks
 
-import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.getInstance
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.server
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.titleFunction
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
@@ -31,8 +31,6 @@ import org.bukkit.potion.PotionEffectType
  */
 
 class XVLOpeningTask : Runnable {
-    private val server = getInstance().server
-
     private var count = 0
 
     private fun openingPlaySound() {

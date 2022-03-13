@@ -5,16 +5,15 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
     maven("https://papermc.io/repo/repository/maven-public/")
 }
 
 dependencies {
     compileOnly(kotlin("stdlib"))
-    compileOnly("io.papermc.paper:paper-api:1.18.1-R0.1-SNAPSHOT")
-    compileOnly("io.github.monun:tap-api:4.3.2")
-    compileOnly("io.github.monun:kommand-api:2.8.1")
+    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnly("io.github.monun:tap-api:4.4.0")
+    compileOnly("io.github.monun:kommand-api:2.10.0")
 }
 
 tasks {
@@ -26,6 +25,20 @@ tasks {
             expand(project.properties)
         }
         filteringCharset = "UTF-8"
+    }
+    register<Jar>("outputJar") {
+        archiveBaseName.set(project.name)
+        archiveClassifier.set("")
+        archiveVersion.set("")
+
+        from(sourceSets["main"].output)
+
+        doLast {
+            copy {
+                from(archiveFile)
+                into("./out")
+            }
+        }
     }
     register<Jar>("paperJar") {
         archiveBaseName.set(project.name)

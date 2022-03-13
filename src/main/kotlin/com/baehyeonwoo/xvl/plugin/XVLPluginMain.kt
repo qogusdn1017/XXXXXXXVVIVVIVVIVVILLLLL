@@ -16,15 +16,19 @@
 
 package com.baehyeonwoo.xvl.plugin
 
-import com.baehyeonwoo.xvl.plugin.commands.XVLKommand.xvlKommand
+import com.baehyeonwoo.xvl.plugin.commands.XVLKommand.register
 import com.baehyeonwoo.xvl.plugin.config.XVLConfig.load
+import com.baehyeonwoo.xvl.plugin.events.XVLGameEvent
 import com.baehyeonwoo.xvl.plugin.events.XVLMotdEvent
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.gameEvent
+import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.motdEvent
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.startGame
 import com.baehyeonwoo.xvl.plugin.objects.XVLGameContentManager.thirstValue
 import com.baehyeonwoo.xvl.plugin.tasks.XVLConfigReloadTask
+import io.github.monun.kommand.kommand
+import net.kyori.adventure.text.Component.text
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
-
 
 /***
  * @author BaeHyeonWoo
@@ -41,11 +45,23 @@ class XVLPluginMain : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
-        server.pluginManager.registerEvents(XVLMotdEvent(), this)
-        server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 0L)
+        gameEvent = XVLGameEvent()
+        motdEvent = XVLMotdEvent()
+
+        server.pluginManager.registerEvents(motdEvent, this)
+        server.scheduler.runTaskTimer(this, XVLConfigReloadTask(), 0L, 20L)
 
         load(configFile)
-        xvlKommand()
+
+        kommand {
+            register("xvl") {
+                requires { isOp }
+                executes {
+                    sender.sendMessage(text("XVL 0.0.2\nA Rechallenge for broken world."))
+                }
+                register(this)
+            }
+        }
 
         if (this.config.getBoolean("game-running")) {
             startGame()
@@ -53,9 +69,9 @@ class XVLPluginMain : JavaPlugin() {
     }
 
     override fun onDisable() {
-        for (onlinePlayers in server.onlinePlayers) {
-            config.set("${onlinePlayers.name}.death", onlinePlayers.scoreboard.getObjective("Death")?.getScore(onlinePlayers.name)?.score)
-            config.set("${onlinePlayers.name}.thirstvalue", onlinePlayers.thirstValue)
+        server.onlinePlayers.forEach {
+            config.set("${it.name}.death", it.scoreboard.getObjective("Death")?.getScore(it.name)?.score)
+            config.set("${it.name}.thirstvalue", it.thirstValue)
             saveConfig()
         }
     }
