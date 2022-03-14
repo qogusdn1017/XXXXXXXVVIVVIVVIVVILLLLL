@@ -86,7 +86,7 @@ class XVLGameEvent : Listener {
 
         if (entity is Player) {
             if (e.cause == EntityDamageEvent.DamageCause.FALL) {
-                if (!entity.isDead) {
+                if (e.damage >= entity.health) {
                     if (entity.fallDistance >= 23) {
                         when (nextInt(10)) {
                             0 -> {
