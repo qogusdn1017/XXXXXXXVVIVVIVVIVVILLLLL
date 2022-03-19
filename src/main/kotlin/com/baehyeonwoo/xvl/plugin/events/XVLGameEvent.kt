@@ -86,15 +86,10 @@ class XVLGameEvent : Listener {
 
         if (entity is Player) {
             if (e.cause == EntityDamageEvent.DamageCause.FALL) {
-                if (e.damage >= entity.health) {
+                if (respawnDelay[entity.uniqueId] == false) {
                     if (entity.fallDistance >= 23) {
                         when (nextInt(10)) {
-                            0 -> {
-                                fallInjured(entity)
-                            }
-                            1 -> {
-                                fallInjured(entity)
-                            }
+                            0, 1 -> fallInjured(entity)
                         }
                     }
                 }
@@ -236,7 +231,7 @@ class XVLGameEvent : Listener {
                     p.sendMessage(text("괜찮은 우유를 드신 것 같습니다. (기본 우유 효과)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                 }
                 1 -> {
-                    p.sendMessage(text("우유가 상한 건지, 소에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
+                    p.sendMessage(text("우유가 상한 건지, 동물에 병이 들은건지, 무엇인지는 몰라도 일단 좋은 우유는 아닌것 같습니다... (독 10초)", NamedTextColor.GRAY).decorate(TextDecoration.ITALIC))
                     server.scheduler.runTaskLater(plugin, Runnable {
                         p.addPotionEffect(PotionEffect(PotionEffectType.POISON, 200, 0, true, false))
                     }, 10L)
