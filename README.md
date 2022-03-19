@@ -1,5 +1,6 @@
 # XXXXXXXVVIVVIVVIVVILLLLL
 A Rechallenge for the broken world.
+
 1.18.2
 
 ## 게임 목표
