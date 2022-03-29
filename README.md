@@ -47,3 +47,9 @@ A Rechallenge for the broken world.
 #### 여담:
 
 - 방송쪽으로 진행 할 수 있도록 옵션을 설정하였음. 플러그인 로딩 후 plugins -> XXXXXXXVVIVVIVVIVVILLLLL -> config.yml 에서 system-message 값을 false로 바꾸면 오프닝 / 엔딩 메시지가 나오지 않음.
+
+---
+
+**_What do you see?_**
+
+즐거운 게임 되시길 바랍니다.
